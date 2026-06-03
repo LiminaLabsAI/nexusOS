@@ -14,6 +14,8 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 
 import Landing from '@/pages/Landing';
+import OperaOSLanding from '@/pages/OperaOSLanding';
+import OperaOSBuilder from '@/pages/OperaOSBuilder';
 import AdminPortal from '@/pages/AdminPortal';
 import AppLayout from '@/components/layout/AppLayout';
 import CommandCenter from '@/pages/CommandCenter';
@@ -51,6 +53,8 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/landing" element={<Landing />} />
+      <Route path="/opera" element={<OperaOSLanding />} />
+      <Route path="/builder" element={<OperaOSBuilder />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
