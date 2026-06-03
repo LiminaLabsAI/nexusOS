@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Database, Plus, Wifi, WifiOff, RefreshCw, Loader2, Trash2,
-  Server, Cloud, Cpu, FileSpreadsheet, Globe, Warehouse
+  Server, Cloud, Cpu, FileSpreadsheet, Globe, Warehouse,
+  CheckSquare, Square, CheckCheck, X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -35,6 +36,8 @@ const statusConfig = {
 export default function DataSources() {
   const [showCreate, setShowCreate] = useState(false);
   const [newSource, setNewSource] = useState({ name: '', type: 'erp', provider: '', domain: 'manufacturing', sync_frequency: 'daily' });
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkRunning, setBulkRunning] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: sources = [] } = useQuery({
@@ -61,6 +64,39 @@ export default function DataSources() {
     mutationFn: (id) => base44.entities.DataSource.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['data-sources'] }),
   });
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => setSelectedIds(new Set(sources.map(s => s.id)));
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const bulkSync = async () => {
+    const targets = sources.filter(s => selectedIds.has(s.id) && s.status === 'connected');
+    if (!targets.length) return;
+    setBulkRunning(true);
+    await Promise.all(targets.map(s =>
+      updateMutation.mutateAsync({ id: s.id, data: { last_sync: new Date().toISOString(), status: 'syncing' } })
+    ));
+    setBulkRunning(false);
+    clearSelection();
+  };
+
+  const bulkRefreshStatus = async () => {
+    const targets = sources.filter(s => selectedIds.has(s.id));
+    if (!targets.length) return;
+    setBulkRunning(true);
+    await Promise.all(targets.map(s =>
+      updateMutation.mutateAsync({ id: s.id, data: { last_sync: new Date().toISOString(), records_synced: Math.floor(Math.random() * 50000) + 1000 } })
+    ));
+    setBulkRunning(false);
+    clearSelection();
+  };
 
   const toggleConnection = (source) => {
     const newStatus = source.status === 'connected' ? 'disconnected' : 'connected';
@@ -155,12 +191,39 @@ export default function DataSources() {
         ))}
       </div>
 
+      {/* Bulk Action Bar */}
+      {sources.length > 0 && (
+        <div className="flex items-center gap-3 flex-wrap">
+          <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" onClick={selectedIds.size === sources.length ? clearSelection : selectAll}>
+            {selectedIds.size === sources.length ? <CheckCheck className="w-3 h-3" /> : <CheckSquare className="w-3 h-3" />}
+            {selectedIds.size === sources.length ? 'Deselect All' : 'Select All'}
+          </Button>
+          {selectedIds.size > 0 && (
+            <>
+              <span className="text-xs text-muted-foreground">{selectedIds.size} selected</span>
+              <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" onClick={bulkSync} disabled={bulkRunning}>
+                {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                Sync Connected
+              </Button>
+              <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" onClick={bulkRefreshStatus} disabled={bulkRunning}>
+                {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wifi className="w-3 h-3" />}
+                Refresh Status
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={clearSelection}>
+                <X className="w-3 h-3" /> Clear
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Sources Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {sources.map((source, i) => {
           const type = typeConfig[source.type] || typeConfig.api;
           const status = statusConfig[source.status] || statusConfig.disconnected;
           const Icon = type.icon;
+          const isSelected = selectedIds.has(source.id);
 
           return (
             <motion.div
@@ -168,11 +231,12 @@ export default function DataSources() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.03 }}
-              className="bg-card rounded-xl border border-border/50 p-5"
+              className={cn("bg-card rounded-xl border p-5 cursor-pointer transition-colors", isSelected ? "border-primary/50 bg-primary/5" : "border-border/50")}
+              onClick={() => toggleSelect(source.id)}
             >
               <div className="flex items-start gap-4">
-                <div className="w-11 h-11 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-5 h-5 text-muted-foreground" />
+                <div className={cn("w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors", isSelected ? "bg-primary/10" : "bg-secondary")}>
+                  {isSelected ? <CheckCheck className="w-5 h-5 text-primary" /> : <Icon className="w-5 h-5 text-muted-foreground" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -191,7 +255,7 @@ export default function DataSources() {
                       {source.last_sync && ` • Last: ${format(new Date(source.last_sync), 'MMM d, h:mm a')}`}
                     </p>
                   )}
-                  <div className="flex items-center gap-2 mt-3">
+                  <div className="flex items-center gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
                     <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
                       onClick={() => toggleConnection(source)}>
                       {source.status === 'connected' ? <WifiOff className="w-3 h-3" /> : <Wifi className="w-3 h-3" />}
