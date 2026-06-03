@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import IoTLinkDialog from '@/components/datasources/IoTLinkDialog';
 import {
   Database, Plus, Wifi, WifiOff, RefreshCw, Loader2, Trash2,
   Server, Cloud, Cpu, FileSpreadsheet, Globe, Warehouse,
@@ -57,6 +58,7 @@ function useLinkSimulation(onDone) {
 
 export default function DataSources() {
   const [showCreate, setShowCreate] = useState(false);
+  const [showIoT, setShowIoT] = useState(false);
   const [linkingId, setLinkingId] = useState(null);
   const [newSource, setNewSource] = useState({ name: '', type: 'erp', provider: '', domain: 'manufacturing', sync_frequency: 'daily' });
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -136,70 +138,82 @@ export default function DataSources() {
           <h1 className="text-2xl font-bold font-display tracking-tight">Data Fabric</h1>
           <p className="text-sm text-muted-foreground mt-1">Link external systems and monitor their real-time sync status</p>
         </div>
-        <Dialog open={showCreate} onOpenChange={setShowCreate}>
-          <DialogTrigger asChild>
-            <Button className="gap-2"><Plus className="w-4 h-4" /> Link System</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Link External System</DialogTitle></DialogHeader>
-            <div className="space-y-4 mt-2">
-              <div>
-                <Label className="text-xs">System Name</Label>
-                <Input value={newSource.name} onChange={(e) => setNewSource({ ...newSource, name: e.target.value })} placeholder="e.g., Production ERP" className="mt-1" />
+        <div className="flex items-center gap-2">
+          <Button className="gap-2" onClick={() => setShowIoT(true)}>
+            <Cpu className="w-4 h-4" /> Link IoT
+          </Button>
+          <Dialog open={showCreate} onOpenChange={setShowCreate}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2"><Plus className="w-4 h-4" /> Link System</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Link External System</DialogTitle></DialogHeader>
+              <div className="space-y-4 mt-2">
+                <div>
+                  <Label className="text-xs">System Name</Label>
+                  <Input value={newSource.name} onChange={(e) => setNewSource({ ...newSource, name: e.target.value })} placeholder="e.g., Production ERP" className="mt-1" />
+                </div>
+                <div>
+                  <Label className="text-xs">Type</Label>
+                  <Select value={newSource.type} onValueChange={(v) => setNewSource({ ...newSource, type: v, provider: '' })}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(typeConfig).filter(([k]) => k !== 'iot').map(([key, config]) => (
+                        <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Provider</Label>
+                  <Select value={newSource.provider} onValueChange={(v) => setNewSource({ ...newSource, provider: v })}>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Select provider…" /></SelectTrigger>
+                    <SelectContent>
+                      {(typeConfig[newSource.type]?.providers || []).map(p => (
+                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                      ))}
+                      <SelectItem value="Other">Other / Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Domain</Label>
+                  <Select value={newSource.domain} onValueChange={(v) => setNewSource({ ...newSource, domain: v })}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {['manufacturing','logistics','retail','finance','hr','operations'].map(d => (
+                        <SelectItem key={d} value={d} className="capitalize">{d.charAt(0).toUpperCase()+d.slice(1)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Sync Frequency</Label>
+                  <Select value={newSource.sync_frequency} onValueChange={(v) => setNewSource({ ...newSource, sync_frequency: v })}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="real_time">Real-time</SelectItem>
+                      <SelectItem value="hourly">Hourly</SelectItem>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={() => createMutation.mutate({ ...newSource, status: 'disconnected' })} disabled={!newSource.name || createMutation.isPending} className="w-full gap-2">
+                  {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
+                  Register System
+                </Button>
               </div>
-              <div>
-                <Label className="text-xs">Type</Label>
-                <Select value={newSource.type} onValueChange={(v) => setNewSource({ ...newSource, type: v, provider: '' })}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(typeConfig).map(([key, config]) => (
-                      <SelectItem key={key} value={key}>{config.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs">Provider</Label>
-                <Select value={newSource.provider} onValueChange={(v) => setNewSource({ ...newSource, provider: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select provider…" /></SelectTrigger>
-                  <SelectContent>
-                    {(typeConfig[newSource.type]?.providers || []).map(p => (
-                      <SelectItem key={p} value={p}>{p}</SelectItem>
-                    ))}
-                    <SelectItem value="Other">Other / Custom</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs">Domain</Label>
-                <Select value={newSource.domain} onValueChange={(v) => setNewSource({ ...newSource, domain: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {['manufacturing','logistics','retail','finance','hr','operations'].map(d => (
-                      <SelectItem key={d} value={d} className="capitalize">{d.charAt(0).toUpperCase()+d.slice(1)}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs">Sync Frequency</Label>
-                <Select value={newSource.sync_frequency} onValueChange={(v) => setNewSource({ ...newSource, sync_frequency: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="real_time">Real-time</SelectItem>
-                    <SelectItem value="hourly">Hourly</SelectItem>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button onClick={() => createMutation.mutate({ ...newSource, status: 'disconnected' })} disabled={!newSource.name || createMutation.isPending} className="w-full gap-2">
-                {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
-                Register System
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <IoTLinkDialog
+          open={showIoT}
+          onOpenChange={setShowIoT}
+          loading={createMutation.isPending}
+          onSubmit={(data) => createMutation.mutate(data)}
+        />
       </div>
 
       {/* Stats */}
