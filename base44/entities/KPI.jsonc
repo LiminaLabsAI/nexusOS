@@ -1,0 +1,74 @@
+{
+  "name": "KPI",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "KPI name"
+    },
+    "domain": {
+      "type": "string",
+      "enum": [
+        "manufacturing",
+        "logistics",
+        "retail",
+        "finance",
+        "hr",
+        "operations"
+      ],
+      "description": "Business domain"
+    },
+    "current_value": {
+      "type": "number",
+      "description": "Current value"
+    },
+    "target_value": {
+      "type": "number",
+      "description": "Target value"
+    },
+    "previous_value": {
+      "type": "number",
+      "description": "Previous period value"
+    },
+    "unit": {
+      "type": "string",
+      "description": "Unit of measurement (%, $, units, etc.)"
+    },
+    "trend": {
+      "type": "string",
+      "enum": [
+        "up",
+        "down",
+        "stable"
+      ],
+      "description": "Current trend direction"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "healthy",
+        "warning",
+        "critical"
+      ],
+      "default": "healthy"
+    },
+    "sparkline_data": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "Last 30 data points for sparkline"
+    },
+    "persona_tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Which personas this KPI is relevant to"
+    }
+  },
+  "required": [
+    "name",
+    "domain"
+  ]
+}

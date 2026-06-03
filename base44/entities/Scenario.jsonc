@@ -1,0 +1,74 @@
+{
+  "name": "Scenario",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Scenario name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Scenario description"
+    },
+    "domain": {
+      "type": "string",
+      "enum": [
+        "manufacturing",
+        "logistics",
+        "retail",
+        "finance",
+        "hr",
+        "operations"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "running",
+        "completed"
+      ],
+      "default": "draft"
+    },
+    "variables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "current_value": {
+            "type": "number"
+          },
+          "simulated_value": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Variables to adjust"
+    },
+    "results": {
+      "type": "string",
+      "description": "AI-generated simulation results"
+    },
+    "best_case": {
+      "type": "string",
+      "description": "Best case outcome"
+    },
+    "worst_case": {
+      "type": "string",
+      "description": "Worst case outcome"
+    },
+    "confidence": {
+      "type": "number",
+      "description": "Confidence score 0-100"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "name": "Alert",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Alert title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "info",
+        "warning",
+        "critical"
+      ],
+      "default": "info"
+    },
+    "domain": {
+      "type": "string",
+      "enum": [
+        "manufacturing",
+        "logistics",
+        "retail",
+        "finance",
+        "hr",
+        "operations"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "acknowledged",
+        "investigating",
+        "resolved",
+        "dismissed"
+      ],
+      "default": "new"
+    },
+    "kpi_name": {
+      "type": "string",
+      "description": "Related KPI name"
+    },
+    "anomaly_score": {
+      "type": "number",
+      "description": "Anomaly confidence score 0-100"
+    },
+    "root_cause": {
+      "type": "string",
+      "description": "AI-generated root cause analysis"
+    },
+    "impact_estimate": {
+      "type": "string",
+      "description": "Estimated business impact"
+    },
+    "ai_confidence": {
+      "type": "number",
+      "description": "AI confidence in analysis 0-100"
+    }
+  },
+  "required": [
+    "title",
+    "severity"
+  ]
+}

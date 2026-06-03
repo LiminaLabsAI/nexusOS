@@ -1,0 +1,71 @@
+{
+  "name": "DataSource",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Data source name"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "erp",
+        "crm",
+        "iot",
+        "database",
+        "api",
+        "file_upload",
+        "warehouse"
+      ],
+      "description": "Source type"
+    },
+    "provider": {
+      "type": "string",
+      "description": "Provider name (e.g., SAP, Oracle, Salesforce)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "connected",
+        "disconnected",
+        "syncing",
+        "error"
+      ],
+      "default": "disconnected"
+    },
+    "last_sync": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last successful sync timestamp"
+    },
+    "records_synced": {
+      "type": "number",
+      "description": "Total records synced"
+    },
+    "sync_frequency": {
+      "type": "string",
+      "enum": [
+        "real_time",
+        "hourly",
+        "daily",
+        "weekly"
+      ],
+      "default": "daily"
+    },
+    "domain": {
+      "type": "string",
+      "enum": [
+        "manufacturing",
+        "logistics",
+        "retail",
+        "finance",
+        "hr",
+        "operations"
+      ]
+    }
+  },
+  "required": [
+    "name",
+    "type"
+  ]
+}

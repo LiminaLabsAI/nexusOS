@@ -1,0 +1,110 @@
+{
+  "name": "Recommendation",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Recommendation title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed recommendation"
+    },
+    "alert_id": {
+      "type": "string",
+      "description": "Related alert ID"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "medium"
+    },
+    "domain": {
+      "type": "string",
+      "enum": [
+        "manufacturing",
+        "logistics",
+        "retail",
+        "finance",
+        "hr",
+        "operations"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "executing",
+        "completed",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "expected_impact": {
+      "type": "string",
+      "description": "Expected outcome description"
+    },
+    "financial_impact": {
+      "type": "number",
+      "description": "Estimated financial impact in dollars"
+    },
+    "confidence_score": {
+      "type": "number",
+      "description": "AI confidence 0-100"
+    },
+    "reasoning": {
+      "type": "string",
+      "description": "AI reasoning and evidence"
+    },
+    "alternatives": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "trade_off": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Alternative approaches"
+    },
+    "risk_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Risk warnings"
+    },
+    "execution_steps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Ordered execution steps"
+    },
+    "outcome_notes": {
+      "type": "string",
+      "description": "Post-execution outcome notes"
+    },
+    "outcome_success": {
+      "type": "boolean",
+      "description": "Whether the recommendation achieved its goal"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

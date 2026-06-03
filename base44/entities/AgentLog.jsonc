@@ -1,0 +1,56 @@
+{
+  "name": "AgentLog",
+  "type": "object",
+  "properties": {
+    "agent_type": {
+      "type": "string",
+      "enum": [
+        "orchestrator",
+        "detection",
+        "diagnosis",
+        "forecast",
+        "recommendation",
+        "execution",
+        "learning"
+      ],
+      "description": "Type of AI agent"
+    },
+    "action": {
+      "type": "string",
+      "description": "What the agent did"
+    },
+    "input_summary": {
+      "type": "string",
+      "description": "Summary of input data"
+    },
+    "output_summary": {
+      "type": "string",
+      "description": "Summary of output"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "running",
+        "completed",
+        "failed"
+      ],
+      "default": "running"
+    },
+    "duration_ms": {
+      "type": "number",
+      "description": "Execution time in milliseconds"
+    },
+    "related_entity_id": {
+      "type": "string",
+      "description": "Related alert/recommendation ID"
+    },
+    "confidence": {
+      "type": "number",
+      "description": "Output confidence 0-100"
+    }
+  },
+  "required": [
+    "agent_type",
+    "action"
+  ]
+}
