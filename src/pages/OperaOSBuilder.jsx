@@ -4,8 +4,8 @@ import { Zap, ArrowRight, ArrowLeft, Check, Building2, Users, BarChart3, Databas
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import WorkflowBuilder from '@/components/operaos/WorkflowBuilder';
 
 const STEPS = ['Company', 'Industry', 'Modules', 'Team', 'Launch'];
 
@@ -59,8 +59,7 @@ export default function OperaOSBuilder() {
 
   const handleLaunch = async () => {
     setLoading(true);
-    // Simulate a short delay for effect
-    await new Promise(r => setTimeout(r, 1500));
+    await new Promise(r => setTimeout(r, 1200));
     toast.success('Your OperaOS instance is being provisioned!');
     setStep(4);
     setLoading(false);
@@ -97,7 +96,7 @@ export default function OperaOSBuilder() {
 
       {/* Content */}
       <div className="flex-1 flex items-start justify-center px-6 py-12">
-        <div className="w-full max-w-2xl">
+        <div className={`w-full ${step === 4 ? 'max-w-5xl' : 'max-w-2xl'}`}>
 
           {/* Step 0: Company */}
           {step === 0 && (
@@ -236,36 +235,8 @@ export default function OperaOSBuilder() {
             </div>
           )}
 
-          {/* Step 4: Success */}
-          {step === 4 && (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Check className="w-8 h-8 text-green-600" />
-              </div>
-              <h1 className="text-2xl font-bold text-slate-900 mb-3">Your OperaOS is being built! 🚀</h1>
-              <p className="text-slate-500 mb-2 max-w-md mx-auto">
-                We're spinning up <strong>{config.company_name}'s</strong> AI Operating System with your selected modules and domains.
-              </p>
-              <p className="text-sm text-slate-400 mb-8">You'll receive a setup link at <strong>{config.admin_email}</strong> shortly.</p>
-
-              <div className="bg-white rounded-xl border border-slate-200 p-5 text-left max-w-md mx-auto mb-8">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Your Configuration</p>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-slate-500">Company</span><span className="font-medium">{config.company_name}</span></div>
-                  <div className="flex justify-between"><span className="text-slate-500">Domains</span><span className="font-medium">{config.domains.length} selected</span></div>
-                  <div className="flex justify-between"><span className="text-slate-500">Modules</span><span className="font-medium">{config.modules.length} enabled</span></div>
-                  <div className="flex justify-between"><span className="text-slate-500">Team Size</span><span className="font-medium">{config.team_size}</span></div>
-                </div>
-              </div>
-
-              <Button
-                onClick={() => navigate('/')}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white h-11 px-6 rounded-lg"
-              >
-                Go to Dashboard <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-          )}
+          {/* Step 4: Workflow Builder */}
+          {step === 4 && <WorkflowBuilder config={config} />}
 
           {/* Navigation */}
           {step < 4 && (
