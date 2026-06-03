@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -7,37 +7,61 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { 
+import { Progress } from '@/components/ui/progress';
+import {
   Database, Plus, Wifi, WifiOff, RefreshCw, Loader2, Trash2,
   Server, Cloud, Cpu, FileSpreadsheet, Globe, Warehouse,
-  CheckSquare, Square, CheckCheck, X
+  CheckSquare, CheckCheck, X, Link2, Link2Off, ShieldCheck,
+  Clock, AlertTriangle, Activity, ArrowUpRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
-import { format } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
+import { format, formatDistanceToNow } from 'date-fns';
 
 const typeConfig = {
-  erp: { icon: Server, label: 'ERP System' },
-  crm: { icon: Globe, label: 'CRM' },
-  iot: { icon: Cpu, label: 'IoT / SCADA' },
-  database: { icon: Database, label: 'Database' },
-  api: { icon: Cloud, label: 'REST API' },
-  file_upload: { icon: FileSpreadsheet, label: 'File Upload' },
-  warehouse: { icon: Warehouse, label: 'Data Warehouse' },
+  erp:        { icon: Server,        label: 'ERP System',      providers: ['SAP', 'Oracle ERP', 'Microsoft Dynamics', 'Infor'] },
+  crm:        { icon: Globe,         label: 'CRM',             providers: ['Salesforce', 'HubSpot', 'Microsoft CRM', 'Zoho'] },
+  iot:        { icon: Cpu,           label: 'IoT / SCADA',     providers: ['Siemens', 'Honeywell', 'Rockwell', 'Custom MQTT'] },
+  database:   { icon: Database,      label: 'Database',        providers: ['PostgreSQL', 'MySQL', 'MongoDB', 'SQL Server'] },
+  api:        { icon: Cloud,         label: 'REST API',        providers: ['Custom API', 'GraphQL', 'gRPC', 'Webhook'] },
+  file_upload:{ icon: FileSpreadsheet,label: 'File Upload',    providers: ['CSV', 'Excel', 'JSON', 'Parquet'] },
+  warehouse:  { icon: Warehouse,     label: 'Data Warehouse',  providers: ['Snowflake', 'BigQuery', 'Redshift', 'Databricks'] },
 };
 
 const statusConfig = {
-  connected: { color: 'bg-emerald-500/20 text-emerald-400', dot: 'bg-emerald-500' },
-  disconnected: { color: 'bg-muted text-muted-foreground', dot: 'bg-muted-foreground' },
-  syncing: { color: 'bg-blue-500/20 text-blue-400', dot: 'bg-blue-500 animate-pulse' },
-  error: { color: 'bg-red-500/20 text-red-400', dot: 'bg-red-500' },
+  connected:    { color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-500',          label: 'Connected' },
+  disconnected: { color: 'bg-muted/60 text-muted-foreground border-border',          dot: 'bg-muted-foreground',     label: 'Disconnected' },
+  syncing:      { color: 'bg-blue-500/15 text-blue-400 border-blue-500/30',          dot: 'bg-blue-500 animate-pulse', label: 'Syncing' },
+  error:        { color: 'bg-red-500/15 text-red-400 border-red-500/30',             dot: 'bg-red-500',              label: 'Error' },
 };
+
+const freqLabel = { real_time: 'Real-time', hourly: 'Hourly', daily: 'Daily', weekly: 'Weekly' };
+
+// Simulates a multi-step connection handshake
+function useLinkSimulation(onDone) {
+  const [step, setStep] = useState(0);
+  const steps = ['Validating credentials…', 'Testing connectivity…', 'Negotiating schema…', 'Establishing secure channel…', 'Connection established'];
+  const [running, setRunning] = useState(false);
+
+  const start = () => { setStep(0); setRunning(true); };
+
+  useEffect(() => {
+    if (!running) return;
+    if (step >= steps.length - 1) { setRunning(false); onDone(); return; }
+    const t = setTimeout(() => setStep(s => s + 1), 700);
+    return () => clearTimeout(t);
+  }, [running, step]);
+
+  return { step, steps, running, start, progress: Math.round((step / (steps.length - 1)) * 100) };
+}
 
 export default function DataSources() {
   const [showCreate, setShowCreate] = useState(false);
+  const [linkingId, setLinkingId] = useState(null);
   const [newSource, setNewSource] = useState({ name: '', type: 'erp', provider: '', domain: 'manufacturing', sync_frequency: 'daily' });
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkRunning, setBulkRunning] = useState(false);
+  const [syncingIds, setSyncingIds] = useState(new Set());
   const queryClient = useQueryClient();
 
   const { data: sources = [] } = useQuery({
@@ -65,24 +89,26 @@ export default function DataSources() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['data-sources'] }),
   });
 
-  const toggleSelect = (id) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
+  const toggleSelect = (id) => setSelectedIds(prev => {
+    const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next;
+  });
   const selectAll = () => setSelectedIds(new Set(sources.map(s => s.id)));
   const clearSelection = () => setSelectedIds(new Set());
+
+  const doSync = async (source) => {
+    setSyncingIds(prev => new Set(prev).add(source.id));
+    await updateMutation.mutateAsync({ id: source.id, data: { status: 'syncing', last_sync: new Date().toISOString() } });
+    await new Promise(r => setTimeout(r, 1800));
+    const added = Math.floor(Math.random() * 5000) + 500;
+    await updateMutation.mutateAsync({ id: source.id, data: { status: 'connected', records_synced: (source.records_synced || 0) + added } });
+    setSyncingIds(prev => { const next = new Set(prev); next.delete(source.id); return next; });
+  };
 
   const bulkSync = async () => {
     const targets = sources.filter(s => selectedIds.has(s.id) && s.status === 'connected');
     if (!targets.length) return;
     setBulkRunning(true);
-    await Promise.all(targets.map(s =>
-      updateMutation.mutateAsync({ id: s.id, data: { last_sync: new Date().toISOString(), status: 'syncing' } })
-    ));
+    await Promise.all(targets.map(s => doSync(s)));
     setBulkRunning(false);
     clearSelection();
   };
@@ -92,44 +118,38 @@ export default function DataSources() {
     if (!targets.length) return;
     setBulkRunning(true);
     await Promise.all(targets.map(s =>
-      updateMutation.mutateAsync({ id: s.id, data: { last_sync: new Date().toISOString(), records_synced: Math.floor(Math.random() * 50000) + 1000 } })
+      updateMutation.mutateAsync({ id: s.id, data: { last_sync: new Date().toISOString(), records_synced: (s.records_synced || 0) + Math.floor(Math.random() * 1000) } })
     ));
     setBulkRunning(false);
     clearSelection();
   };
 
-  const toggleConnection = (source) => {
-    const newStatus = source.status === 'connected' ? 'disconnected' : 'connected';
-    updateMutation.mutate({
-      id: source.id,
-      data: {
-        status: newStatus,
-        ...(newStatus === 'connected' ? { last_sync: new Date().toISOString(), records_synced: Math.floor(Math.random() * 50000) + 1000 } : {})
-      }
-    });
-  };
+  const connectedCount = sources.filter(s => s.status === 'connected' || s.status === 'syncing').length;
+  const totalRecords = sources.reduce((sum, s) => sum + (s.records_synced || 0), 0);
+  const errorCount = sources.filter(s => s.status === 'error').length;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold font-display tracking-tight">Data Fabric</h1>
-          <p className="text-sm text-muted-foreground mt-1">Unified enterprise data connectors and integration layer</p>
+          <p className="text-sm text-muted-foreground mt-1">Link external systems and monitor their real-time sync status</p>
         </div>
         <Dialog open={showCreate} onOpenChange={setShowCreate}>
           <DialogTrigger asChild>
-            <Button className="gap-2"><Plus className="w-4 h-4" /> Add Source</Button>
+            <Button className="gap-2"><Plus className="w-4 h-4" /> Link System</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Add Data Source</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Link External System</DialogTitle></DialogHeader>
             <div className="space-y-4 mt-2">
               <div>
-                <Label className="text-xs">Name</Label>
+                <Label className="text-xs">System Name</Label>
                 <Input value={newSource.name} onChange={(e) => setNewSource({ ...newSource, name: e.target.value })} placeholder="e.g., Production ERP" className="mt-1" />
               </div>
               <div>
                 <Label className="text-xs">Type</Label>
-                <Select value={newSource.type} onValueChange={(v) => setNewSource({ ...newSource, type: v })}>
+                <Select value={newSource.type} onValueChange={(v) => setNewSource({ ...newSource, type: v, provider: '' })}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(typeConfig).map(([key, config]) => (
@@ -140,19 +160,24 @@ export default function DataSources() {
               </div>
               <div>
                 <Label className="text-xs">Provider</Label>
-                <Input value={newSource.provider} onChange={(e) => setNewSource({ ...newSource, provider: e.target.value })} placeholder="e.g., SAP, Oracle, Salesforce" className="mt-1" />
+                <Select value={newSource.provider} onValueChange={(v) => setNewSource({ ...newSource, provider: v })}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select provider…" /></SelectTrigger>
+                  <SelectContent>
+                    {(typeConfig[newSource.type]?.providers || []).map(p => (
+                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                    ))}
+                    <SelectItem value="Other">Other / Custom</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label className="text-xs">Domain</Label>
                 <Select value={newSource.domain} onValueChange={(v) => setNewSource({ ...newSource, domain: v })}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                    <SelectItem value="logistics">Logistics</SelectItem>
-                    <SelectItem value="retail">Retail</SelectItem>
-                    <SelectItem value="finance">Finance</SelectItem>
-                    <SelectItem value="hr">HR</SelectItem>
-                    <SelectItem value="operations">Operations</SelectItem>
+                    {['manufacturing','logistics','retail','finance','hr','operations'].map(d => (
+                      <SelectItem key={d} value={d} className="capitalize">{d.charAt(0).toUpperCase()+d.slice(1)}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -168,8 +193,9 @@ export default function DataSources() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={() => createMutation.mutate({ ...newSource, status: 'disconnected' })} disabled={!newSource.name} className="w-full">
-                Add Data Source
+              <Button onClick={() => createMutation.mutate({ ...newSource, status: 'disconnected' })} disabled={!newSource.name || createMutation.isPending} className="w-full gap-2">
+                {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
+                Register System
               </Button>
             </div>
           </DialogContent>
@@ -179,16 +205,24 @@ export default function DataSources() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Sources', value: sources.length, color: 'text-primary' },
-          { label: 'Connected', value: sources.filter(s => s.status === 'connected').length, color: 'text-emerald-400' },
-          { label: 'Records Synced', value: sources.reduce((sum, s) => sum + (s.records_synced || 0), 0).toLocaleString(), color: 'text-amber-400' },
-          { label: 'Errors', value: sources.filter(s => s.status === 'error').length, color: 'text-red-400' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-card rounded-xl border border-border/50 p-4">
-            <p className="text-xs text-muted-foreground">{stat.label}</p>
-            <p className={cn("text-2xl font-bold font-display mt-1", stat.color)}>{stat.value}</p>
-          </div>
-        ))}
+          { label: 'Total Systems', value: sources.length,              icon: Database,  color: 'text-primary' },
+          { label: 'Connected',     value: connectedCount,              icon: Link2,     color: 'text-emerald-400' },
+          { label: 'Records Synced',value: totalRecords.toLocaleString(),icon: Activity,  color: 'text-amber-400' },
+          { label: 'Errors',        value: errorCount,                  icon: AlertTriangle, color: 'text-red-400' },
+        ].map((stat, i) => {
+          const Icon = stat.icon;
+          return (
+            <div key={i} className="bg-card rounded-xl border border-border/50 p-4 flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Icon className={cn("w-4 h-4", stat.color)} />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+                <p className={cn("text-xl font-bold font-display", stat.color)}>{stat.value}</p>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Bulk Action Bar */}
@@ -219,72 +253,163 @@ export default function DataSources() {
 
       {/* Sources Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {sources.map((source, i) => {
-          const type = typeConfig[source.type] || typeConfig.api;
-          const status = statusConfig[source.status] || statusConfig.disconnected;
-          const Icon = type.icon;
-          const isSelected = selectedIds.has(source.id);
-
-          return (
-            <motion.div
-              key={source.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.03 }}
-              className={cn("bg-card rounded-xl border p-5 cursor-pointer transition-colors", isSelected ? "border-primary/50 bg-primary/5" : "border-border/50")}
-              onClick={() => toggleSelect(source.id)}
-            >
-              <div className="flex items-start gap-4">
-                <div className={cn("w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors", isSelected ? "bg-primary/10" : "bg-secondary")}>
-                  {isSelected ? <CheckCheck className="w-5 h-5 text-primary" /> : <Icon className="w-5 h-5 text-muted-foreground" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold truncate">{source.name}</h3>
-                    <div className={cn("w-1.5 h-1.5 rounded-full", status.dot)} />
-                  </div>
-                  <p className="text-xs text-muted-foreground">{source.provider || type.label}</p>
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <Badge className={cn("text-[10px]", status.color)}>{source.status}</Badge>
-                    <Badge variant="outline" className="text-[10px]">{source.domain}</Badge>
-                    <Badge variant="outline" className="text-[10px]">{source.sync_frequency}</Badge>
-                  </div>
-                  {source.records_synced > 0 && (
-                    <p className="text-[10px] text-muted-foreground mt-2">
-                      {source.records_synced.toLocaleString()} records synced
-                      {source.last_sync && ` • Last: ${format(new Date(source.last_sync), 'MMM d, h:mm a')}`}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
-                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
-                      onClick={() => toggleConnection(source)}>
-                      {source.status === 'connected' ? <WifiOff className="w-3 h-3" /> : <Wifi className="w-3 h-3" />}
-                      {source.status === 'connected' ? 'Disconnect' : 'Connect'}
-                    </Button>
-                    {source.status === 'connected' && (
-                      <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"
-                        onClick={() => updateMutation.mutate({ id: source.id, data: { last_sync: new Date().toISOString(), status: 'syncing' } })}>
-                        <RefreshCw className="w-3 h-3" /> Sync
-                      </Button>
-                    )}
-                    <Button size="icon" variant="ghost" className="h-7 w-7 ml-auto"
-                      onClick={() => deleteMutation.mutate(source.id)}>
-                      <Trash2 className="w-3 h-3 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
+        {sources.map((source, i) => (
+          <SourceCard
+            key={source.id}
+            source={source}
+            index={i}
+            isSelected={selectedIds.has(source.id)}
+            isSyncing={syncingIds.has(source.id)}
+            isLinking={linkingId === source.id}
+            onToggleSelect={() => toggleSelect(source.id)}
+            onLink={() => setLinkingId(source.id)}
+            onLinkDone={() => {
+              setLinkingId(null);
+              updateMutation.mutate({ id: source.id, data: { status: 'connected', last_sync: new Date().toISOString(), records_synced: Math.floor(Math.random() * 30000) + 2000 } });
+            }}
+            onDisconnect={() => updateMutation.mutate({ id: source.id, data: { status: 'disconnected', records_synced: 0 } })}
+            onSync={() => doSync(source)}
+            onDelete={() => deleteMutation.mutate(source.id)}
+          />
+        ))}
 
         {sources.length === 0 && (
           <div className="col-span-full text-center py-16 text-muted-foreground">
             <Database className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">No data sources configured. Add one to start ingesting enterprise data.</p>
+            <p className="text-sm">No systems linked. Click "Link System" to connect your first data source.</p>
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function SourceCard({ source, index, isSelected, isSyncing, isLinking, onToggleSelect, onLink, onLinkDone, onDisconnect, onSync, onDelete }) {
+  const type = typeConfig[source.type] || typeConfig.api;
+  const status = statusConfig[source.status] || statusConfig.disconnected;
+  const Icon = type.icon;
+  const activelySyncing = isSyncing || source.status === 'syncing';
+
+  const sim = useLinkSimulation(onLinkDone);
+
+  const handleLinkClick = (e) => {
+    e.stopPropagation();
+    sim.start();
+    onLink();
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.03 }}
+      className={cn(
+        "bg-card rounded-xl border p-5 cursor-pointer transition-colors",
+        isSelected ? "border-primary/50 bg-primary/5" : "border-border/50 hover:border-border"
+      )}
+      onClick={() => onToggleSelect()}
+    >
+      <div className="flex items-start gap-4">
+        {/* Icon */}
+        <div className={cn("w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors",
+          isSelected ? "bg-primary/10" : source.status === 'connected' ? "bg-emerald-500/10" : "bg-secondary"
+        )}>
+          {isSelected
+            ? <CheckCheck className="w-5 h-5 text-primary" />
+            : activelySyncing
+            ? <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
+            : <Icon className={cn("w-5 h-5", source.status === 'connected' ? "text-emerald-400" : "text-muted-foreground")} />
+          }
+        </div>
+
+        <div className="flex-1 min-w-0">
+          {/* Title row */}
+          <div className="flex items-center gap-2 mb-0.5">
+            <h3 className="text-sm font-semibold truncate">{source.name}</h3>
+            <div className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", status.dot)} />
+          </div>
+          <p className="text-xs text-muted-foreground">{source.provider || type.label} · {source.domain}</p>
+
+          {/* Badges */}
+          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+            <Badge className={cn("text-[10px] border", status.color)}>{status.label}</Badge>
+            <Badge variant="outline" className="text-[10px]">{freqLabel[source.sync_frequency] || source.sync_frequency}</Badge>
+          </div>
+
+          {/* Sync progress */}
+          <AnimatePresence>
+            {isLinking && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-3 space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-3 h-3 text-primary" />
+                  <span className="text-[10px] text-primary">{sim.steps[sim.step]}</span>
+                </div>
+                <Progress value={sim.progress} className="h-1" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Sync stats */}
+          {source.status === 'connected' && source.records_synced > 0 && !isLinking && (
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="bg-secondary/60 rounded-lg px-3 py-2">
+                <p className="text-[10px] text-muted-foreground mb-0.5">Records Synced</p>
+                <p className="text-xs font-semibold text-foreground">{source.records_synced.toLocaleString()}</p>
+              </div>
+              <div className="bg-secondary/60 rounded-lg px-3 py-2">
+                <p className="text-[10px] text-muted-foreground mb-0.5">Last Sync</p>
+                <p className="text-xs font-semibold text-foreground">
+                  {source.last_sync ? formatDistanceToNow(new Date(source.last_sync), { addSuffix: true }) : '—'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Active sync progress bar */}
+          {activelySyncing && !isLinking && (
+            <div className="mt-3 space-y-1">
+              <div className="flex items-center gap-1.5">
+                <Activity className="w-3 h-3 text-blue-400" />
+                <span className="text-[10px] text-blue-400">Synchronizing records…</span>
+              </div>
+              <div className="h-1 bg-secondary rounded-full overflow-hidden">
+                <motion.div className="h-full bg-blue-500 rounded-full" animate={{ width: ['20%', '90%'] }} transition={{ duration: 1.6, repeat: Infinity, repeatType: 'reverse' }} />
+              </div>
+            </div>
+          )}
+
+          {/* Error state */}
+          {source.status === 'error' && (
+            <div className="mt-2 flex items-center gap-1.5 text-red-400">
+              <AlertTriangle className="w-3 h-3" />
+              <span className="text-[10px]">Sync failed — check credentials and retry</span>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex items-center gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
+            {source.status === 'disconnected' || source.status === 'error' ? (
+              <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" onClick={handleLinkClick} disabled={isLinking}>
+                {isLinking ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link2 className="w-3 h-3" />}
+                Link
+              </Button>
+            ) : (
+              <>
+                <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={(e) => { e.stopPropagation(); onSync(); }} disabled={activelySyncing}>
+                  {activelySyncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  Sync Now
+                </Button>
+                <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground" onClick={(e) => { e.stopPropagation(); onDisconnect(); }}>
+                  <Link2Off className="w-3 h-3" /> Unlink
+                </Button>
+              </>
+            )}
+            <Button size="icon" variant="ghost" className="h-7 w-7 ml-auto" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+              <Trash2 className="w-3 h-3 text-destructive" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 }
