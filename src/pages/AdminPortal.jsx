@@ -10,25 +10,26 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Shield, Users, UserPlus, Mail, Crown, User, 
-  Loader2, CheckCircle, AlertTriangle, Settings, Database,
-  Activity, BarChart3, Lock
+import {
+  Shield, Users, UserPlus, Mail, Crown, User,
+  Loader2, CheckCircle, Activity, Lock,
+  Check, Minus, Eye
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { ROLES, ROLE_ROUTES, ROUTE_LABELS } from '@/lib/permissions';
 
-const roleConfig = {
-  admin: { label: 'Admin', icon: Crown, color: 'bg-amber-400/20 text-amber-300 border-amber-400/30', desc: 'Full access to all features, user management, and system configuration' },
-  user: { label: 'User', icon: User, color: 'bg-blue-400/20 text-blue-300 border-blue-400/30', desc: 'Access to Command Center, Alerts, Recommendations, and Scenarios' },
+const ROLE_ICONS = {
+  admin:    Crown,
+  analyst:  Activity,
+  operator: Shield,
+  viewer:   Eye,
+  user:     User,
 };
 
-const PERMISSIONS = {
-  admin: ['Command Center', 'Intelligence Feed', 'Alerts', 'Recommendations', 'Simulation Lab', 'AI Agents', 'Data Fabric', 'Settings', 'Admin Portal', 'User Management', 'System Config'],
-  user: ['Command Center', 'Intelligence Feed', 'Alerts', 'Recommendations', 'Simulation Lab'],
-};
+const ALL_ROUTES = ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios', '/agents', '/data-sources', '/settings', '/admin'];
 
 export default function AdminPortal() {
   const { user } = useAuth();
@@ -48,7 +49,7 @@ export default function AdminPortal() {
     mutationFn: ({ id, data }) => base44.entities.User.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('User role updated');
+      toast.success('Role updated');
     },
   });
 
@@ -68,13 +69,12 @@ export default function AdminPortal() {
     }
   };
 
-  // Guard: only admins can access
-  if (user && user.role !== 'admin') {
-    return <Navigate to="/" replace />;
-  }
+  if (user && user.role !== 'admin') return <Navigate to="/" replace />;
 
-  const adminCount = users.filter(u => u.role === 'admin').length;
-  const userCount = users.filter(u => u.role !== 'admin').length;
+  const roleCounts = Object.keys(ROLES).reduce((acc, r) => {
+    acc[r] = users.filter(u => (u.role || 'user') === r).length;
+    return acc;
+  }, {});
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -89,71 +89,54 @@ export default function AdminPortal() {
             <p className="text-sm text-muted-foreground">User management and role-based access control</p>
           </div>
         </div>
+
         <Dialog open={showInvite} onOpenChange={setShowInvite}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
-              <UserPlus className="w-4 h-4" /> Invite User
-            </Button>
+            <Button className="gap-2"><UserPlus className="w-4 h-4" /> Invite User</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Invite Team Member</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>Invite Team Member</DialogTitle></DialogHeader>
             <div className="space-y-4 mt-2">
               <div>
                 <Label className="text-xs">Email Address</Label>
                 <div className="relative mt-1">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    placeholder="colleague@company.com"
-                    className="pl-10"
-                    type="email"
-                  />
+                  <Input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="colleague@company.com" className="pl-10" type="email" />
                 </div>
               </div>
               <div>
                 <Label className="text-xs">Role</Label>
                 <Select value={inviteRole} onValueChange={setInviteRole}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="user">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4" /> User — Standard access
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="admin">
-                      <div className="flex items-center gap-2">
-                        <Crown className="w-4 h-4 text-amber-400" /> Admin — Full access
-                      </div>
-                    </SelectItem>
+                    {Object.entries(ROLES).map(([r, cfg]) => {
+                      const Icon = ROLE_ICONS[r] || User;
+                      return (
+                        <SelectItem key={r} value={r}>
+                          <span className="flex items-center gap-2">
+                            <Icon className="w-3.5 h-3.5" />
+                            <span className="font-medium">{cfg.label}</span>
+                            <span className="text-muted-foreground text-[11px]">— {cfg.description.split('.')[0]}</span>
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
-
               {/* Permissions preview */}
               <div className="p-3 bg-secondary/30 rounded-lg">
-                <p className="text-xs font-medium text-muted-foreground mb-2">
-                  Permissions granted to <span className="capitalize">{inviteRole}</span>:
-                </p>
+                <p className="text-xs font-medium text-muted-foreground mb-2">Modules accessible to <span className="capitalize text-foreground">{ROLES[inviteRole]?.label}</span>:</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {PERMISSIONS[inviteRole]?.map((perm) => (
-                    <Badge key={perm} variant="outline" className="text-[10px]">
-                      <CheckCircle className="w-2.5 h-2.5 mr-1 text-emerald-400" />
-                      {perm}
+                  {(ROLE_ROUTES[inviteRole] || []).map(path => (
+                    <Badge key={path} variant="outline" className="text-[10px]">
+                      <Check className="w-2.5 h-2.5 mr-1 text-emerald-400" />
+                      {ROUTE_LABELS[path]}
                     </Badge>
                   ))}
                 </div>
               </div>
-
-              <Button
-                onClick={handleInvite}
-                disabled={!inviteEmail || inviting}
-                className="w-full gap-2"
-              >
+              <Button onClick={handleInvite} disabled={!inviteEmail || inviting} className="w-full gap-2">
                 {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
                 {inviting ? 'Sending...' : 'Send Invitation'}
               </Button>
@@ -163,51 +146,59 @@ export default function AdminPortal() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Total Users', value: users.length, icon: Users, color: 'text-primary' },
-          { label: 'Admins', value: adminCount, icon: Crown, color: 'text-amber-400' },
-          { label: 'Standard Users', value: userCount, icon: User, color: 'text-blue-400' },
-          { label: 'Active Sessions', value: users.length, icon: Activity, color: 'text-emerald-400' },
-        ].map((stat, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className="bg-card rounded-xl border border-border/50 p-4"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <stat.icon className={cn("w-4 h-4", stat.color)} />
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
-            </div>
-            <p className={cn("text-2xl font-bold font-display", stat.color)}>{stat.value}</p>
-          </motion.div>
-        ))}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {Object.entries(ROLES).map(([r, cfg], i) => {
+          const Icon = ROLE_ICONS[r] || User;
+          return (
+            <motion.div key={r} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+              className="bg-card rounded-xl border border-border/50 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">{cfg.label}</p>
+              </div>
+              <p className="text-2xl font-bold font-display text-foreground">{roleCounts[r] || 0}</p>
+            </motion.div>
+          );
+        })}
       </div>
 
-      {/* Role Reference */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {Object.entries(roleConfig).map(([role, config]) => (
-          <div key={role} className="bg-card rounded-xl border border-border/50 p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center", role === 'admin' ? 'bg-amber-400/10' : 'bg-blue-400/10')}>
-                <config.icon className={cn("w-4 h-4", role === 'admin' ? 'text-amber-400' : 'text-blue-400')} />
-              </div>
-              <div>
-                <Badge variant="outline" className={cn("text-xs", config.color)}>{config.label}</Badge>
-                <p className="text-xs text-muted-foreground mt-1">{config.desc}</p>
-              </div>
-            </div>
-            <Separator className="mb-3" />
-            <p className="text-xs font-medium text-muted-foreground mb-2">Accessible modules:</p>
-            <div className="flex flex-wrap gap-1.5">
-              {PERMISSIONS[role].map(perm => (
-                <Badge key={perm} variant="outline" className="text-[10px]">{perm}</Badge>
+      {/* Permissions Matrix */}
+      <div className="bg-card rounded-xl border border-border/50 overflow-hidden">
+        <div className="p-5 border-b border-border/50">
+          <h3 className="font-semibold text-sm">Role Permissions Matrix</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Which modules each role can access</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border/30">
+                <th className="text-left px-5 py-3 text-muted-foreground font-medium w-44">Module</th>
+                {Object.entries(ROLES).map(([r, cfg]) => (
+                  <th key={r} className="px-3 py-3 text-center">
+                    <Badge variant="outline" className={cn("text-[10px] whitespace-nowrap", cfg.color)}>{cfg.label}</Badge>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {ALL_ROUTES.map((path, i) => (
+                <tr key={path} className={cn("border-b border-border/20 hover:bg-secondary/10 transition-colors", i % 2 === 0 && "bg-secondary/5")}>
+                  <td className="px-5 py-2.5 text-foreground font-medium">{ROUTE_LABELS[path]}</td>
+                  {Object.keys(ROLES).map(r => {
+                    const allowed = (ROLE_ROUTES[r] || []).includes(path);
+                    return (
+                      <td key={r} className="px-3 py-2.5 text-center">
+                        {allowed
+                          ? <Check className="w-3.5 h-3.5 text-emerald-400 mx-auto" />
+                          : <Minus className="w-3.5 h-3.5 text-muted-foreground/30 mx-auto" />}
+                      </td>
+                    );
+                  })}
+                </tr>
               ))}
-            </div>
-          </div>
-        ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Users Table */}
@@ -228,8 +219,8 @@ export default function AdminPortal() {
           <div className="divide-y divide-border/30">
             {users.map((u, i) => {
               const role = u.role || 'user';
-              const config = roleConfig[role] || roleConfig.user;
-              const RoleIcon = config.icon;
+              const cfg = ROLES[role] || ROLES.user;
+              const Icon = ROLE_ICONS[role] || User;
               const isCurrentUser = u.id === user?.id;
 
               return (
@@ -245,6 +236,7 @@ export default function AdminPortal() {
                       {(u.full_name || u.email || '?')[0].toUpperCase()}
                     </span>
                   </div>
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium truncate">{u.full_name || 'No name set'}</p>
@@ -257,12 +249,20 @@ export default function AdminPortal() {
                       </p>
                     )}
                   </div>
+
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    <Badge variant="outline" className={cn("text-xs gap-1", config.color)}>
-                      <RoleIcon className="w-3 h-3" />
-                      {config.label}
+                    {/* Current role badge */}
+                    <Badge variant="outline" className={cn("text-xs gap-1.5 hidden sm:flex", cfg.color)}>
+                      <Icon className="w-3 h-3" />
+                      {cfg.label}
                     </Badge>
-                    {!isCurrentUser && (
+
+                    {/* Accessible modules count */}
+                    <span className="text-[10px] text-muted-foreground hidden md:block">
+                      {(ROLE_ROUTES[role] || []).length} modules
+                    </span>
+
+                    {!isCurrentUser ? (
                       <Select
                         value={role}
                         onValueChange={(newRole) => updateUserMutation.mutate({ id: u.id, data: { role: newRole } })}
@@ -271,18 +271,21 @@ export default function AdminPortal() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="user">
-                            <span className="flex items-center gap-1.5"><User className="w-3 h-3" /> User</span>
-                          </SelectItem>
-                          <SelectItem value="admin">
-                            <span className="flex items-center gap-1.5"><Crown className="w-3 h-3 text-amber-400" /> Admin</span>
-                          </SelectItem>
+                          {Object.entries(ROLES).map(([r, c]) => {
+                            const RI = ROLE_ICONS[r] || User;
+                            return (
+                              <SelectItem key={r} value={r}>
+                                <span className="flex items-center gap-1.5">
+                                  <RI className="w-3 h-3" /> {c.label}
+                                </span>
+                              </SelectItem>
+                            );
+                          })}
                         </SelectContent>
                       </Select>
-                    )}
-                    {isCurrentUser && (
+                    ) : (
                       <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                        <Lock className="w-3 h-3" /> Cannot change own role
+                        <Lock className="w-3 h-3" /> Own role
                       </div>
                     )}
                   </div>

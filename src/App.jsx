@@ -6,6 +6,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import RoleGuard from '@/components/RoleGuard';
 
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -57,15 +58,15 @@ const AuthenticatedApp = () => {
       
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<AppLayout />}>
-          <Route path="/" element={<CommandCenter />} />
-          <Route path="/intelligence" element={<IntelligenceFeed />} />
-          <Route path="/alerts" element={<Alerts />} />
-          <Route path="/recommendations" element={<Recommendations />} />
-          <Route path="/scenarios" element={<Scenarios />} />
-          <Route path="/agents" element={<AIAgents />} />
-          <Route path="/data-sources" element={<DataSources />} />
-          <Route path="/settings" element={<NexusSettings />} />
-          <Route path="/admin" element={<AdminPortal />} />
+          <Route path="/" element={<RoleGuard><CommandCenter /></RoleGuard>} />
+          <Route path="/intelligence" element={<RoleGuard><IntelligenceFeed /></RoleGuard>} />
+          <Route path="/alerts" element={<RoleGuard><Alerts /></RoleGuard>} />
+          <Route path="/recommendations" element={<RoleGuard><Recommendations /></RoleGuard>} />
+          <Route path="/scenarios" element={<RoleGuard><Scenarios /></RoleGuard>} />
+          <Route path="/agents" element={<RoleGuard><AIAgents /></RoleGuard>} />
+          <Route path="/data-sources" element={<RoleGuard><DataSources /></RoleGuard>} />
+          <Route path="/settings" element={<RoleGuard><NexusSettings /></RoleGuard>} />
+          <Route path="/admin" element={<RoleGuard><AdminPortal /></RoleGuard>} />
         </Route>
       </Route>
 
