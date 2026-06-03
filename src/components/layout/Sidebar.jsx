@@ -3,10 +3,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Bell, Lightbulb, FlaskConical, 
   Database, Bot, Settings, ChevronLeft, ChevronRight,
-  Activity, Zap
+  Activity, Zap, Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/lib/AuthContext';
 
 const navItems = [
   { path: '/', label: 'Command Center', icon: LayoutDashboard },
@@ -17,10 +18,12 @@ const navItems = [
   { path: '/agents', label: 'AI Agents', icon: Bot },
   { path: '/data-sources', label: 'Data Fabric', icon: Database },
   { path: '/settings', label: 'Settings', icon: Settings },
+  { path: '/admin', label: 'Admin Portal', icon: Shield, adminOnly: true },
 ];
 
 export default function Sidebar({ collapsed, onToggle }) {
   const location = useLocation();
+  const { user } = useAuth();
 
   return (
     <motion.aside
@@ -53,7 +56,7 @@ export default function Sidebar({ collapsed, onToggle }) {
 
       {/* Navigation */}
       <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
+        {navItems.filter(item => !item.adminOnly || user?.role === 'admin').map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <Link

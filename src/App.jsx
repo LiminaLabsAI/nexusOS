@@ -12,6 +12,8 @@ import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 
+import Landing from '@/pages/Landing';
+import AdminPortal from '@/pages/AdminPortal';
 import AppLayout from '@/components/layout/AppLayout';
 import CommandCenter from '@/pages/CommandCenter';
 import IntelligenceFeed from '@/pages/IntelligenceFeed';
@@ -47,6 +49,7 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
+      <Route path="/landing" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -62,6 +65,7 @@ const AuthenticatedApp = () => {
           <Route path="/agents" element={<AIAgents />} />
           <Route path="/data-sources" element={<DataSources />} />
           <Route path="/settings" element={<NexusSettings />} />
+          <Route path="/admin" element={<AdminPortal />} />
         </Route>
       </Route>
 
