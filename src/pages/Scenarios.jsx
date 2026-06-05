@@ -207,7 +207,7 @@ Be specific with numbers, timelines, and business impact.`,
         onClick={() => setActiveTab('scenarios')}
         className={cn('px-4 py-1.5 text-sm rounded-md transition-all', activeTab === 'scenarios' ? 'bg-card text-foreground shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground')}
         >
-        Scenarios
+        Active Scenarios
         </button>
         </div>
 
