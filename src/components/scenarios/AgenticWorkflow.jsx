@@ -330,7 +330,7 @@ Generate exactly 3 intelligence items: 1 critical alert, 1 warning, and 1 strate
             <Badge variant="outline" className="text-[10px] border-amber-400/30 text-amber-400">Supply Chain Manager · COO</Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            End-to-end: simulate disruptions → sync data fabric → generate intelligence
+            End-to-end: simulate disruptions → refresh data → generate intelligence
           </p>
         </div>
         {goalConfirmed && (
@@ -424,7 +424,7 @@ Generate exactly 3 intelligence items: 1 critical alert, 1 warning, and 1 strate
                       : <Brain className="w-3.5 h-3.5" />}
                     {running ? 'Running…'
                       : i === 0 ? 'Run Simulations'
-                      : i === 1 ? 'Sync Data Fabric'
+                      : i === 1 ? 'Refresh Data'
                       : 'Generate Intelligence'}
                   </Button>
                 )}
