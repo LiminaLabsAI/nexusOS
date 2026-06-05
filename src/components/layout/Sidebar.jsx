@@ -45,12 +45,12 @@ export default function Sidebar({ collapsed, onToggle }) {
                 initial={{ opacity: 0, width: 0 }}
                 animate={{ opacity: 1, width: 'auto' }}
                 exit={{ opacity: 0, width: 0 }}
-                className="overflow-hidden whitespace-nowrap"
+                className="overflow-hidden whitespace-nowrap flex flex-col"
               >
-                <span className="font-display font-bold text-lg text-sidebar-foreground tracking-tight">
+                <span className="font-display font-bold text-lg text-sidebar-foreground tracking-tight leading-tight">
                   NEXUS<span className="text-primary">OS</span>
                 </span>
-                <span className="text-xs text-muted-foreground font-normal tracking-wide">See more. Know more. Do more.</span>
+                <span className="text-xs text-muted-foreground font-normal tracking-wide leading-tight">See more. Know more. Do more.</span>
               </motion.div>
             )}
           </AnimatePresence>
