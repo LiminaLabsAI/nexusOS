@@ -50,6 +50,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                 <span className="font-display font-bold text-lg text-sidebar-foreground tracking-tight">
                   NEXUS<span className="text-primary">OS</span>
                 </span>
+                <span className="text-xs text-muted-foreground font-normal tracking-wide">See more. Know more. Do more.</span>
               </motion.div>
             )}
           </AnimatePresence>
