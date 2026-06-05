@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
+import Footer from './Footer';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 
@@ -30,6 +31,7 @@ export default function AppLayout() {
         <main className="p-6">
           <Outlet context={{ persona }} />
         </main>
+        <Footer />
       </div>
     </div>
   );
