@@ -12,6 +12,7 @@ import {
   Loader2, ArrowRight, ChevronDown, ChevronUp,
   Zap, AlertTriangle, Lightbulb, RefreshCw
 } from 'lucide-react';
+import GoalSetup from '@/components/scenarios/GoalSetup';
 
 const STEPS = [
   {
@@ -100,6 +101,8 @@ function StepIndicator({ step, index, status }) {
 }
 
 export default function AgenticWorkflow() {
+  const [goalConfirmed, setGoalConfirmed] = useState(false);
+  const [workflowGoal, setWorkflowGoal] = useState(null);
   const [activeStep, setActiveStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState(new Set());
   const [running, setRunning] = useState(false);
@@ -309,6 +312,8 @@ Generate exactly 3 intelligence items: 1 critical alert, 1 warning, and 1 strate
   const allDone = completedSteps.size === 3;
 
   const reset = () => {
+    setGoalConfirmed(false);
+    setWorkflowGoal(null);
     setCompletedSteps(new Set());
     setActiveStep(0);
     setSimResults({});
@@ -328,34 +333,44 @@ Generate exactly 3 intelligence items: 1 critical alert, 1 warning, and 1 strate
             End-to-end: simulate disruptions → sync data fabric → generate intelligence
           </p>
         </div>
-        {allDone && (
+        {goalConfirmed && (
           <Button variant="outline" size="sm" className="gap-2 text-emerald-400 border-emerald-500/30" onClick={reset}>
             <RefreshCw className="w-3.5 h-3.5" /> Reset
           </Button>
         )}
       </div>
 
-      {/* Step Progress */}
-      <div className="bg-secondary/20 rounded-xl border border-border/50 p-4">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Workflow Progress</p>
-          <span className="text-xs text-muted-foreground">{completedSteps.size} / {STEPS.length} steps complete</span>
-        </div>
-        <div className="flex items-center gap-0 mb-3">
-          {STEPS.map((step, i) => (
-            <StepIndicator
-              key={step.id}
-              step={step}
-              index={i}
-              status={completedSteps.has(i) ? 'done' : activeStep === i ? 'active' : 'pending'}
-            />
-          ))}
-        </div>
-        <Progress value={(completedSteps.size / STEPS.length) * 100} className="h-1.5" />
-      </div>
+      {/* Goal Setup — always shown, locks once confirmed */}
+      <GoalSetup onConfirm={(data) => { setWorkflowGoal(data); setGoalConfirmed(true); }} />
 
-      {/* Steps */}
-      {STEPS.map((step, i) => {
+      {/* Workflow steps — only after goal confirmed */}
+      {!goalConfirmed && (
+        <div className="border-t border-border/30 pt-3 opacity-40 pointer-events-none select-none text-center">
+          <p className="text-xs text-muted-foreground py-1">Complete goal setup above to unlock workflow steps</p>
+        </div>
+      )}
+
+      {goalConfirmed && <>
+        <div className="bg-secondary/20 rounded-xl border border-border/50 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Workflow Progress</p>
+            <span className="text-xs text-muted-foreground">{completedSteps.size} / {STEPS.length} steps complete</span>
+          </div>
+          <div className="flex items-center gap-0 mb-3">
+            {STEPS.map((step, i) => (
+              <StepIndicator
+                key={step.id}
+                step={step}
+                index={i}
+                status={completedSteps.has(i) ? 'done' : activeStep === i ? 'active' : 'pending'}
+              />
+            ))}
+          </div>
+          <Progress value={(completedSteps.size / STEPS.length) * 100} className="h-1.5" />
+        </div>
+
+        {/* Steps */}
+        {STEPS.map((step, i) => {
         const Icon = step.icon;
         const isDone = completedSteps.has(i);
         const isActive = activeStep === i;
@@ -502,31 +517,32 @@ Generate exactly 3 intelligence items: 1 critical alert, 1 warning, and 1 strate
         );
       })}
 
-      {/* All Done Banner */}
-      <AnimatePresence>
-        {allDone && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-r from-emerald-600/20 to-teal-600/20 border border-emerald-500/30 rounded-xl p-4 flex items-center gap-4"
-          >
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-emerald-400">Workflow Complete</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                3 simulations modelled · Data Fabric synced · Intelligence feed active for COO & Supply Chain Manager
-              </p>
-            </div>
-            <a href="/intelligence" className="ml-auto">
-              <Button size="sm" className="gap-1.5 text-xs h-8">
-                <Brain className="w-3.5 h-3.5" /> Intelligence Feed <ArrowRight className="w-3 h-3" />
-              </Button>
-            </a>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        {/* All Done Banner */}
+        <AnimatePresence>
+          {allDone && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-gradient-to-r from-emerald-600/20 to-teal-600/20 border border-emerald-500/30 rounded-xl p-4 flex items-center gap-4"
+            >
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-emerald-400">Workflow Complete</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  3 simulations modelled · Data Fabric synced · Intelligence feed active for COO & Supply Chain Manager
+                </p>
+              </div>
+              <a href="/intelligence" className="ml-auto">
+                <Button size="sm" className="gap-1.5 text-xs h-8">
+                  <Brain className="w-3.5 h-3.5" /> Intelligence Feed <ArrowRight className="w-3 h-3" />
+                </Button>
+              </a>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </>}
     </div>
   );
 }
