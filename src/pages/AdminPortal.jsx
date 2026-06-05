@@ -14,7 +14,7 @@ import { Link } from 'react-router-dom';
 import {
   Shield, Users, UserPlus, Mail, Crown, User,
   Loader2, CheckCircle, Activity, Lock,
-  Check, Minus, Eye, Zap, ArrowRight, ExternalLink
+  Check, Minus, Eye
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -144,32 +144,6 @@ export default function AdminPortal() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
-
-      {/* CortexOS Product */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Zap className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-indigo-200 uppercase tracking-wider mb-0.5">Powered by</p>
-            <h2 className="text-lg font-bold text-white">CortexOS — Self-Serve Builder</h2>
-            <p className="text-sm text-indigo-200 mt-0.5">Let enterprise teams spin up their own AI Operating System — no code required.</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <a href="https://weightless-cortex-os-core.base44.app/" target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" className="h-8 text-xs border-white/30 text-white bg-white/10 hover:bg-white/20 gap-1.5">
-              <ExternalLink className="w-3.5 h-3.5" /> View Landing
-            </Button>
-          </a>
-          <a href="https://weightless-cortex-os-core.base44.app/" target="_blank" rel="noopener noreferrer">
-            <Button className="h-8 text-xs bg-white text-indigo-700 hover:bg-indigo-50 gap-1.5">
-              Open Builder <ArrowRight className="w-3.5 h-3.5" />
-            </Button>
-          </a>
-        </div>
       </div>
 
       {/* Stats */}

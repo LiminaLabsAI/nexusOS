@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Bot, Send, Loader2, CheckCircle, XCircle, Clock,
   Search, Crosshair, TrendingUp, Lightbulb, Play, GraduationCap,
-  MessageSquare, Plus
+  MessageSquare, Plus, Zap, ArrowRight, ExternalLink
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -99,6 +99,32 @@ Respond with actionable intelligence. Be specific, data-driven, and quantitative
       <div>
         <h1 className="text-2xl font-bold font-display tracking-tight">AI Agents</h1>
         <p className="text-sm text-muted-foreground mt-1">Multi-agent orchestration for enterprise intelligence</p>
+      </div>
+
+      {/* CortexOS Banner */}
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Zap className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-indigo-200 uppercase tracking-wider mb-0.5">Powered by CortexOS</p>
+            <h2 className="text-lg font-bold text-white">Self-Serve Agent Builder</h2>
+            <p className="text-sm text-indigo-200 mt-0.5">Let enterprise teams spin up their own AI Operating System — no code required.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <a href="https://weightless-cortex-os-core.base44.app/" target="_blank" rel="noopener noreferrer">
+            <Button variant="outline" className="h-8 text-xs border-white/30 text-white bg-white/10 hover:bg-white/20 gap-1.5">
+              <ExternalLink className="w-3.5 h-3.5" /> View Landing
+            </Button>
+          </a>
+          <a href="https://weightless-cortex-os-core.base44.app/" target="_blank" rel="noopener noreferrer">
+            <Button className="h-8 text-xs bg-white text-indigo-700 hover:bg-indigo-50 gap-1.5">
+              Open Builder <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          </a>
+        </div>
       </div>
 
       {/* Agent Architecture */}
