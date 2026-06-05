@@ -195,7 +195,7 @@ Be specific with numbers, timelines, and business impact.`,
               </DialogContent>
             </Dialog>
             <Button className="gap-2" onClick={() => setActiveTab('workflow')}>
-              <Zap className="w-4 h-4" /> New Scenario
+              <Zap className="w-4 h-4" /> Agentic Workflow
             </Button>
           </div>
         )}
@@ -209,15 +209,16 @@ Be specific with numbers, timelines, and business impact.`,
         >
         Scenarios
         </button>
-        <button
-        onClick={() => setActiveTab('workflow')}
-        className={cn('px-4 py-1.5 text-sm rounded-md transition-all flex items-center gap-1.5', activeTab === 'workflow' ? 'bg-card text-foreground shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground')}
-        >
-        <Zap className="w-3.5 h-3.5" /> Agentic Workflow
-        </button>
         </div>
 
-        {activeTab === 'workflow' && <AgenticWorkflow />}
+        {activeTab === 'workflow' && (
+          <div>
+            <button onClick={() => setActiveTab('scenarios')} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 mb-4">
+              ← Back to Scenarios
+            </button>
+            <AgenticWorkflow />
+          </div>
+        )}
 
         {activeTab === 'scenarios' && <div className="space-y-3">
         {scenarios.map((scenario, i) => (
