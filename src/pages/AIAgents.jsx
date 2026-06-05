@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import AgentBuilderModal from '@/components/agents/AgentBuilderModal';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Bot, Send, Loader2, CheckCircle, XCircle, Clock,
   Search, Crosshair, TrendingUp, Lightbulb, Play, GraduationCap,
-  MessageSquare, Plus, Zap, ArrowRight, ExternalLink
+  MessageSquare, Plus, Zap, ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -35,6 +36,7 @@ export default function AIAgents() {
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
+  const [showBuilderModal, setShowBuilderModal] = useState(false);
   const chatEndRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -110,22 +112,16 @@ Respond with actionable intelligence. Be specific, data-driven, and quantitative
           <div>
             <p className="text-xs font-semibold text-indigo-200 uppercase tracking-wider mb-0.5">Powered by CortexOS</p>
             <h2 className="text-lg font-bold text-white">Self-Serve Agent Builder</h2>
-            <p className="text-sm text-indigo-200 mt-0.5">Let enterprise teams spin up their own AI Operating System — no code required.</p>
+            <p className="text-sm text-indigo-200 mt-0.5">Design, configure, and deploy AI agents visually — no code, no engineering team required.</p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <a href="https://weightless-cortex-os-core.base44.app/" target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" className="h-8 text-xs border-white/30 text-white bg-white/10 hover:bg-white/20 gap-1.5">
-              <ExternalLink className="w-3.5 h-3.5" /> View Landing
-            </Button>
-          </a>
-          <a href="https://weightless-cortex-os-core.base44.app/" target="_blank" rel="noopener noreferrer">
-            <Button className="h-8 text-xs bg-white text-indigo-700 hover:bg-indigo-50 gap-1.5">
-              Open Builder <ArrowRight className="w-3.5 h-3.5" />
-            </Button>
-          </a>
+          <Button onClick={() => setShowBuilderModal(true)} className="h-8 text-xs bg-white text-indigo-700 hover:bg-indigo-50 gap-1.5">
+            Open Builder <ArrowRight className="w-3.5 h-3.5" />
+          </Button>
         </div>
       </div>
+      <AgentBuilderModal open={showBuilderModal} onOpenChange={setShowBuilderModal} />
 
       {/* Agent Architecture */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
