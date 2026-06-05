@@ -159,16 +159,16 @@ export default function AdminPortal() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <Link to="/cortex">
+          <a href="https://weightless-cortex-os-core.base44.app/" target="_blank" rel="noopener noreferrer">
             <Button variant="outline" className="h-8 text-xs border-white/30 text-white bg-white/10 hover:bg-white/20 gap-1.5">
               <ExternalLink className="w-3.5 h-3.5" /> View Landing
             </Button>
-          </Link>
-          <Link to="/cortex-builder">
+          </a>
+          <a href="https://weightless-cortex-os-core.base44.app/" target="_blank" rel="noopener noreferrer">
             <Button className="h-8 text-xs bg-white text-indigo-700 hover:bg-indigo-50 gap-1.5">
               Open Builder <ArrowRight className="w-3.5 h-3.5" />
             </Button>
-          </Link>
+          </a>
         </div>
       </div>
 
