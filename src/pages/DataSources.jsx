@@ -7,13 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 import IoTLinkDialog from '@/components/datasources/IoTLinkDialog';
 import {
   Database, Plus, Wifi, WifiOff, RefreshCw, Loader2, Trash2,
   Server, Cloud, Cpu, FileSpreadsheet, Globe, Warehouse,
   CheckSquare, CheckCheck, X, Link2, Link2Off, ShieldCheck,
-  Clock, AlertTriangle, Activity, ArrowUpRight
+  Clock, AlertTriangle, Activity, ArrowUpRight, Download, Code2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -56,8 +57,33 @@ function useLinkSimulation(onDone) {
   return { step, steps, running, start, progress: Math.round((step / (steps.length - 1)) * 100) };
 }
 
+function downloadCSV(sources) {
+  const headers = ['Name', 'Type', 'Provider', 'Domain', 'Status', 'Sync Frequency', 'Records Synced', 'Last Sync', 'Created Date'];
+  const rows = sources.map(s => [
+    s.name,
+    typeConfig[s.type]?.label || s.type,
+    s.provider || '',
+    s.domain || '',
+    s.status,
+    freqLabel[s.sync_frequency] || s.sync_frequency || '',
+    s.records_synced || 0,
+    s.last_sync ? format(new Date(s.last_sync), 'yyyy-MM-dd HH:mm:ss') : '',
+    s.created_date ? format(new Date(s.created_date), 'yyyy-MM-dd HH:mm:ss') : '',
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `data-sources-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.success('CSV downloaded');
+}
+
 export default function DataSources() {
   const [showCreate, setShowCreate] = useState(false);
+  const [showApi, setShowApi] = useState(false);
   const [showIoT, setShowIoT] = useState(false);
   const [linkingId, setLinkingId] = useState(null);
   const [newSource, setNewSource] = useState({ name: '', type: 'erp', provider: '', domain: 'manufacturing', sync_frequency: 'daily' });
@@ -139,6 +165,12 @@ export default function DataSources() {
           <p className="text-sm text-muted-foreground mt-1">Link external systems and monitor their real-time sync status</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => downloadCSV(sources)}>
+            <Download className="w-4 h-4" /> Export CSV
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => setShowApi(true)}>
+            <Code2 className="w-4 h-4" /> API Access
+          </Button>
           <Button className="gap-2" onClick={() => setShowIoT(true)}>
             <Cpu className="w-4 h-4" /> Link IoT
           </Button>
@@ -214,6 +246,35 @@ export default function DataSources() {
           loading={createMutation.isPending}
           onSubmit={(data) => createMutation.mutate(data)}
         />
+
+        {/* API Access Dialog */}
+        <Dialog open={showApi} onOpenChange={setShowApi}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader><DialogTitle className="flex items-center gap-2"><Code2 className="w-4 h-4" /> API Access</DialogTitle></DialogHeader>
+            <div className="space-y-4 mt-2 text-sm">
+              <p className="text-muted-foreground text-xs">Use the NexusOS SDK to query data source records programmatically.</p>
+              <div className="space-y-3">
+                {[
+                  { label: 'List all data sources', code: `base44.entities.DataSource.list()` },
+                  { label: 'Filter by status', code: `base44.entities.DataSource.filter({ status: 'connected' })` },
+                  { label: 'Filter by domain', code: `base44.entities.DataSource.filter({ domain: 'manufacturing' })` },
+                  { label: 'Get single source', code: `base44.entities.DataSource.get('<source_id>')` },
+                ].map(({ label, code }) => (
+                  <div key={label}>
+                    <p className="text-xs text-muted-foreground mb-1">{label}</p>
+                    <div className="bg-secondary/60 rounded-lg px-3 py-2 font-mono text-xs text-primary flex items-center justify-between gap-2">
+                      <span className="truncate">{code}</span>
+                      <Button size="icon" variant="ghost" className="h-6 w-6 flex-shrink-0" onClick={() => { navigator.clipboard.writeText(code); toast.success('Copied'); }}>
+                        <FileSpreadsheet className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground">Import via: <code className="bg-secondary px-1 rounded">import {'{ base44 }'} from '@/api/base44Client'</code></p>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats */}
