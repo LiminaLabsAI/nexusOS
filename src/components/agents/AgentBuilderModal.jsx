@@ -25,7 +25,7 @@ export default function AgentBuilderModal({ open, onOpenChange }) {
 
   const handleContinue = () => {
     if (!selected) return;
-    window.open('https://weightless-cortex-os-core.base44.app/', '_blank');
+    window.open('https://weightless-cortex-os-core.base44.app/agents', '_blank');
     onOpenChange(false);
     setSelected(null);
   };
