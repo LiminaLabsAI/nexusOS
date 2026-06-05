@@ -8,11 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { FlaskConical, Plus, Loader2, Play, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { FlaskConical, Plus, Loader2, Play, Trash2, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import AgenticWorkflow from '@/components/scenarios/AgenticWorkflow';
 
 export default function Scenarios() {
+  const [activeTab, setActiveTab] = useState('scenarios');
   const [showCreate, setShowCreate] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [simulating, setSimulating] = useState(null);
@@ -121,78 +123,103 @@ Be specific with numbers, timelines, and business impact.`,
           <h1 className="text-2xl font-bold font-display tracking-tight">Simulation Lab</h1>
           <p className="text-sm text-muted-foreground mt-1">What-if analysis and scenario modeling</p>
         </div>
-        <Dialog open={showCreate} onOpenChange={setShowCreate}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" /> New Scenario
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create Scenario</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 mt-2">
-              <div>
-                <Label className="text-xs">Scenario Name</Label>
-                <Input value={newScenario.name} onChange={(e) => setNewScenario({ ...newScenario, name: e.target.value })} placeholder="e.g., Supplier delay impact" className="mt-1" />
-              </div>
-              <div>
-                <Label className="text-xs">Description</Label>
-                <Textarea value={newScenario.description} onChange={(e) => setNewScenario({ ...newScenario, description: e.target.value })} placeholder="Describe the scenario..." className="mt-1" />
-              </div>
-              <div>
-                <Label className="text-xs">Domain</Label>
-                <Select value={newScenario.domain} onValueChange={(v) => setNewScenario({ ...newScenario, domain: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                    <SelectItem value="logistics">Logistics</SelectItem>
-                    <SelectItem value="retail">Retail</SelectItem>
-                    <SelectItem value="finance">Finance</SelectItem>
-                    <SelectItem value="operations">Operations</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label className="text-xs">Variables</Label>
-                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={addVariable}>+ Add Variable</Button>
-                </div>
-                <div className="space-y-3">
-                  {newScenario.variables.map((v, i) => (
-                    <div key={i} className="p-3 bg-secondary/30 rounded-lg space-y-2">
-                      <div className="flex gap-2">
-                        <Input placeholder="Variable name" value={v.name} onChange={(e) => updateVariable(i, 'name', e.target.value)} className="text-xs" />
-                        <Input placeholder="Unit" value={v.unit} onChange={(e) => updateVariable(i, 'unit', e.target.value)} className="text-xs w-20" />
-                        {newScenario.variables.length > 1 && (
-                          <Button size="icon" variant="ghost" className="h-9 w-9" onClick={() => removeVariable(i)}>
-                            <Trash2 className="w-3 h-3 text-destructive" />
-                          </Button>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <div className="flex-1">
-                          <span className="text-[10px] text-muted-foreground">Current</span>
-                          <Input type="number" value={v.current_value} onChange={(e) => updateVariable(i, 'current_value', e.target.value)} className="text-xs" />
-                        </div>
-                        <div className="flex-1">
-                          <span className="text-[10px] text-muted-foreground">Simulated</span>
-                          <Input type="number" value={v.simulated_value} onChange={(e) => updateVariable(i, 'simulated_value', e.target.value)} className="text-xs" />
-                        </div>
-                      </div>
+        {activeTab === 'scenarios' && (
+          <div className="flex items-center gap-2">
+            <Dialog open={showCreate} onOpenChange={setShowCreate}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Plus className="w-4 h-4" /> Custom Scenario
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Create Scenario</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 mt-2">
+                  <div>
+                    <Label className="text-xs">Scenario Name</Label>
+                    <Input value={newScenario.name} onChange={(e) => setNewScenario({ ...newScenario, name: e.target.value })} placeholder="e.g., Supplier delay impact" className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Description</Label>
+                    <Textarea value={newScenario.description} onChange={(e) => setNewScenario({ ...newScenario, description: e.target.value })} placeholder="Describe the scenario..." className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Domain</Label>
+                    <Select value={newScenario.domain} onValueChange={(v) => setNewScenario({ ...newScenario, domain: v })}>
+                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                        <SelectItem value="logistics">Logistics</SelectItem>
+                        <SelectItem value="retail">Retail</SelectItem>
+                        <SelectItem value="finance">Finance</SelectItem>
+                        <SelectItem value="operations">Operations</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label className="text-xs">Variables</Label>
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={addVariable}>+ Add Variable</Button>
                     </div>
-                  ))}
+                    <div className="space-y-3">
+                      {newScenario.variables.map((v, i) => (
+                        <div key={i} className="p-3 bg-secondary/30 rounded-lg space-y-2">
+                          <div className="flex gap-2">
+                            <Input placeholder="Variable name" value={v.name} onChange={(e) => updateVariable(i, 'name', e.target.value)} className="text-xs" />
+                            <Input placeholder="Unit" value={v.unit} onChange={(e) => updateVariable(i, 'unit', e.target.value)} className="text-xs w-20" />
+                            {newScenario.variables.length > 1 && (
+                              <Button size="icon" variant="ghost" className="h-9 w-9" onClick={() => removeVariable(i)}>
+                                <Trash2 className="w-3 h-3 text-destructive" />
+                              </Button>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <div className="flex-1">
+                              <span className="text-[10px] text-muted-foreground">Current</span>
+                              <Input type="number" value={v.current_value} onChange={(e) => updateVariable(i, 'current_value', e.target.value)} className="text-xs" />
+                            </div>
+                            <div className="flex-1">
+                              <span className="text-[10px] text-muted-foreground">Simulated</span>
+                              <Input type="number" value={v.simulated_value} onChange={(e) => updateVariable(i, 'simulated_value', e.target.value)} className="text-xs" />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <Button onClick={() => createMutation.mutate(newScenario)} disabled={!newScenario.name} className="w-full">
+                    Create Scenario
+                  </Button>
                 </div>
-              </div>
-              <Button onClick={() => createMutation.mutate(newScenario)} disabled={!newScenario.name} className="w-full">
-                Create Scenario
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+              </DialogContent>
+            </Dialog>
+            <Button className="gap-2" onClick={() => setActiveTab('workflow')}>
+              <Zap className="w-4 h-4" /> New Scenario
+            </Button>
+          </div>
+        )}
       </div>
 
-      <div className="space-y-3">
+        {/* Tabs */}
+        <div className="flex gap-1 bg-secondary/40 p-1 rounded-lg w-fit">
+        <button
+        onClick={() => setActiveTab('scenarios')}
+        className={cn('px-4 py-1.5 text-sm rounded-md transition-all', activeTab === 'scenarios' ? 'bg-card text-foreground shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground')}
+        >
+        Scenarios
+        </button>
+        <button
+        onClick={() => setActiveTab('workflow')}
+        className={cn('px-4 py-1.5 text-sm rounded-md transition-all flex items-center gap-1.5', activeTab === 'workflow' ? 'bg-card text-foreground shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground')}
+        >
+        <Zap className="w-3.5 h-3.5" /> Agentic Workflow
+        </button>
+        </div>
+
+        {activeTab === 'workflow' && <AgenticWorkflow />}
+
+        {activeTab === 'scenarios' && <div className="space-y-3">
         {scenarios.map((scenario, i) => (
           <motion.div
             key={scenario.id}
@@ -294,7 +321,7 @@ Be specific with numbers, timelines, and business impact.`,
             <p className="text-sm">No scenarios yet. Create one to start modeling.</p>
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 }
