@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Bell, Lightbulb, FlaskConical, 
   Database, Bot, Settings, ChevronLeft, ChevronRight,
-  Activity, Zap, Shield
+  Activity, Zap, Shield, Truck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +19,7 @@ const navItems = [
   { path: '/agents', label: 'AI Agents', icon: Bot },
   { path: '/data-sources', label: 'Data Fabric', icon: Database },
   { path: '/settings', label: 'Settings', icon: Settings },
+  { path: '/supply-chain', label: 'Supply Chain', icon: Truck },
   { path: '/admin', label: 'Admin Portal', icon: Shield },
 ];
 

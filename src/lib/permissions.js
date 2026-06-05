@@ -14,11 +14,11 @@ export const ROLES = {
 
 // Maps each role to the route paths it is allowed to visit
 export const ROLE_ROUTES = {
-  admin:    ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios', '/agents', '/data-sources', '/settings', '/admin'],
-  analyst:  ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios'],
-  operator: ['/', '/alerts', '/recommendations', '/data-sources'],
+  admin:    ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios', '/agents', '/data-sources', '/settings', '/admin', '/supply-chain'],
+  analyst:  ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios', '/supply-chain'],
+  operator: ['/', '/alerts', '/recommendations', '/data-sources', '/supply-chain'],
   viewer:   ['/', '/intelligence'],
-  user:     ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios'],
+  user:     ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios', '/supply-chain'],
 };
 
 // Human-readable module labels that match routes
@@ -32,6 +32,7 @@ export const ROUTE_LABELS = {
   '/data-sources':  'Data Fabric',
   '/settings':      'Settings',
   '/admin':         'Admin Portal',
+  '/supply-chain':  'Supply Chain Workflow',
 };
 
 /**

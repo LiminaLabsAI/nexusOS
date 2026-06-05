@@ -28,6 +28,7 @@ import Scenarios from '@/pages/Scenarios';
 import AIAgents from '@/pages/AIAgents';
 import DataSources from '@/pages/DataSources';
 import NexusSettings from '@/pages/NexusSettings';
+import SupplyChainWorkflow from '@/pages/SupplyChainWorkflow';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -75,6 +76,7 @@ const AuthenticatedApp = () => {
           <Route path="/data-sources" element={<RoleGuard><DataSources /></RoleGuard>} />
           <Route path="/settings" element={<RoleGuard><NexusSettings /></RoleGuard>} />
           <Route path="/admin" element={<RoleGuard><AdminPortal /></RoleGuard>} />
+          <Route path="/supply-chain" element={<RoleGuard><SupplyChainWorkflow /></RoleGuard>} />
         </Route>
       </Route>
 
