@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useOutletContext } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,14 +13,19 @@ import { FlaskConical, Plus, Loader2, Play, Trash2, ChevronDown, ChevronUp, Zap 
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import AgenticWorkflow from '@/components/scenarios/AgenticWorkflow';
+import { getPersonaConfig, filterByPersona } from '@/lib/personaConfig';
 
 export default function Scenarios() {
+  const { persona } = useOutletContext() || {};
+  const config = getPersonaConfig(persona);
+  const simCfg = config.simulation || {};
+
   const [activeTab, setActiveTab] = useState('scenarios');
   const [showCreate, setShowCreate] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [simulating, setSimulating] = useState(null);
   const [newScenario, setNewScenario] = useState({
-    name: '', description: '', domain: 'manufacturing',
+    name: '', description: '', domain: simCfg.defaultDomain || 'manufacturing',
     variables: [{ name: '', current_value: 0, simulated_value: 0, unit: '' }]
   });
   const queryClient = useQueryClient();
@@ -50,6 +56,8 @@ export default function Scenarios() {
       `${v.name}: ${v.current_value}${v.unit || ''} → ${v.simulated_value}${v.unit || ''}`
     ).join('\n') || 'No variables specified';
 
+    const focusInstruction = simCfg.promptFocus || 'Be specific with numbers, timelines, and business impact.';
+
     const result = await base44.integrations.Core.InvokeLLM({
       prompt: `You are the NexusOS Forecast Agent. Run a what-if simulation for this scenario:
 
@@ -65,7 +73,7 @@ Provide detailed simulation results including:
 3. Worst case scenario
 4. Confidence level (0-100)
 
-Be specific with numbers, timelines, and business impact.`,
+${focusInstruction}`,
       response_json_schema: {
         type: "object",
         properties: {
@@ -116,6 +124,12 @@ Be specific with numbers, timelines, and business impact.`,
     setNewScenario({ ...newScenario, variables: newScenario.variables.filter((_, i) => i !== idx) });
   };
 
+  // Filter displayed scenarios by persona's allowed domains (if simulation config restricts)
+  const allowedDomains = simCfg.allowedDomains || [];
+  const filteredScenarios = allowedDomains.length
+    ? scenarios.filter(s => !s.domain || allowedDomains.includes(s.domain))
+    : scenarios;
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -128,7 +142,7 @@ Be specific with numbers, timelines, and business impact.`,
             <Dialog open={showCreate} onOpenChange={setShowCreate}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="gap-2">
-                  <Plus className="w-4 h-4" /> Custom Scenario
+                  <Plus className="w-4 h-4" /> New Scenario
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
@@ -149,11 +163,9 @@ Be specific with numbers, timelines, and business impact.`,
                     <Select value={newScenario.domain} onValueChange={(v) => setNewScenario({ ...newScenario, domain: v })}>
                       <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                        <SelectItem value="logistics">Logistics</SelectItem>
-                        <SelectItem value="retail">Retail</SelectItem>
-                        <SelectItem value="finance">Finance</SelectItem>
-                        <SelectItem value="operations">Operations</SelectItem>
+                        {(allowedDomains.length ? allowedDomains : ['manufacturing','logistics','retail','finance','operations']).map(d => (
+                          <SelectItem key={d} value={d} className="capitalize">{d.charAt(0).toUpperCase() + d.slice(1)}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -201,6 +213,22 @@ Be specific with numbers, timelines, and business impact.`,
         )}
       </div>
 
+      {/* Persona banner */}
+      {simCfg.bannerText && (
+        <div className={cn("px-4 py-2.5 rounded-lg bg-gradient-to-r border border-border/30 flex items-center gap-3 flex-wrap text-xs text-muted-foreground", config.bannerColor)}>
+          <span className="font-medium text-foreground">{config.label} view:</span>
+          <span>{simCfg.bannerText}</span>
+          {allowedDomains.length > 0 && (
+            <span className="flex gap-1 ml-1">
+              {allowedDomains.map(d => (
+                <Badge key={d} variant="outline" className="text-[10px] capitalize">{d}</Badge>
+              ))}
+            </span>
+          )}
+          <span className="ml-auto">{filteredScenarios.length} scenario{filteredScenarios.length !== 1 ? 's' : ''}</span>
+        </div>
+      )}
+
         {/* Tabs */}
         <div className="flex gap-1 bg-secondary/40 p-1 rounded-lg w-fit">
         <button
@@ -221,7 +249,7 @@ Be specific with numbers, timelines, and business impact.`,
         )}
 
         {activeTab === 'scenarios' && <div className="space-y-3">
-        {scenarios.map((scenario, i) => (
+        {filteredScenarios.map((scenario, i) => (
           <motion.div
             key={scenario.id}
             initial={{ opacity: 0, y: 10 }}
@@ -276,7 +304,7 @@ Be specific with numbers, timelines, and business impact.`,
                   className="border-t border-border/30 overflow-hidden"
                 >
                   <div className="p-5 space-y-4 bg-secondary/10">
-                    {scenario.variables?.length > 0 && (
+                    {simCfg.showVariableDetail !== false && scenario.variables?.length > 0 && (
                       <div>
                         <p className="text-xs font-medium text-muted-foreground mb-2">Variables</p>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -297,13 +325,13 @@ Be specific with numbers, timelines, and business impact.`,
                         <p className="text-sm">{scenario.results}</p>
                       </div>
                     )}
-                    {scenario.best_case && (
+                    {simCfg.showBestWorstCase !== false && scenario.best_case && (
                       <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
                         <p className="text-xs font-medium text-emerald-400 mb-1">Best Case</p>
                         <p className="text-xs">{scenario.best_case}</p>
                       </div>
                     )}
-                    {scenario.worst_case && (
+                    {simCfg.showBestWorstCase !== false && scenario.worst_case && (
                       <div className="p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
                         <p className="text-xs font-medium text-red-400 mb-1">Worst Case</p>
                         <p className="text-xs">{scenario.worst_case}</p>
@@ -316,7 +344,7 @@ Be specific with numbers, timelines, and business impact.`,
           </motion.div>
         ))}
 
-        {scenarios.length === 0 && (
+        {filteredScenarios.length === 0 && (
           <div className="text-center py-16 text-muted-foreground">
             <FlaskConical className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p className="text-sm">No scenarios yet. Create one to start modeling.</p>

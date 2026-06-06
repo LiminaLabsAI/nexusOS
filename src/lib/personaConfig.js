@@ -16,6 +16,15 @@ export const PERSONA_CONFIG = {
     showRootCause: false,
     bannerColor: 'from-blue-500/10 to-transparent',
     bannerText: 'Executive Overview — cross-domain critical signals',
+    simulation: {
+      bannerText: 'Strategic scenario modeling — cross-domain, executive focus',
+      defaultDomain: 'finance',
+      allowedDomains: ['manufacturing', 'logistics', 'retail', 'finance', 'operations'],
+      showVariableDetail: false,       // hide low-level variable rows
+      showBestWorstCase: true,
+      showConfidence: true,
+      promptFocus: 'Focus on strategic business impact, revenue, market position, and board-level risk. Use executive language. Summarise technical detail.',
+    },
   },
   coo: {
     label: 'COO',
@@ -29,6 +38,15 @@ export const PERSONA_CONFIG = {
     showRootCause: true,
     bannerColor: 'from-emerald-500/10 to-transparent',
     bannerText: 'Operations & Supply Chain intelligence',
+    simulation: {
+      bannerText: 'Operational scenario lab — manufacturing, logistics & operations',
+      defaultDomain: 'operations',
+      allowedDomains: ['manufacturing', 'logistics', 'operations'],
+      showVariableDetail: true,
+      showBestWorstCase: true,
+      showConfidence: true,
+      promptFocus: 'Focus on operational efficiency, throughput, supply chain resilience, and execution timelines. Include specific KPIs and process metrics.',
+    },
   },
   cfo: {
     label: 'CFO',
@@ -42,6 +60,15 @@ export const PERSONA_CONFIG = {
     showRootCause: false,
     bannerColor: 'from-amber-500/10 to-transparent',
     bannerText: 'Finance domain signals and risk exposure',
+    simulation: {
+      bannerText: 'Financial scenario modeling — P&L, cash flow & risk exposure',
+      defaultDomain: 'finance',
+      allowedDomains: ['finance'],
+      showVariableDetail: true,
+      showBestWorstCase: true,
+      showConfidence: true,
+      promptFocus: 'Focus on financial impact: P&L, EBITDA, cash flow, cost savings, revenue risk, and compliance implications. Use precise financial language with dollar figures.',
+    },
   },
   plant_manager: {
     label: 'Plant Manager',
