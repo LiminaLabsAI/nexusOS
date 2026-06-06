@@ -13,7 +13,7 @@ import { FlaskConical, Plus, Loader2, Play, Trash2, ChevronDown, ChevronUp, Zap 
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import AgenticWorkflow from '@/components/scenarios/AgenticWorkflow';
-import { getPersonaConfig, filterByPersona } from '@/lib/personaConfig';
+import { getPersonaConfig, filterByPersona, PERSONA_SCENARIO_GROUPS } from '@/lib/personaConfig';
 
 export default function Scenarios() {
   const { persona } = useOutletContext() || {};
@@ -129,6 +129,15 @@ ${focusInstruction}`,
   const filteredScenarios = allowedDomains.length
     ? scenarios.filter(s => !s.domain || allowedDomains.includes(s.domain))
     : scenarios;
+
+  // Persona-specific grouped preset templates
+  const presetGroups = PERSONA_SCENARIO_GROUPS[persona] || null;
+
+  // Launch a preset: pre-fill the create form and open the dialog
+  const launchPreset = (template) => {
+    setNewScenario({ ...template });
+    setShowCreate(true);
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -248,7 +257,52 @@ ${focusInstruction}`,
           </div>
         )}
 
-        {activeTab === 'scenarios' && <div className="space-y-3">
+        {activeTab === 'scenarios' && <div className="space-y-6">
+
+        {/* Persona-specific grouped preset scenarios */}
+        {presetGroups && (
+          <div className="space-y-5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Recommended Scenarios</p>
+            {presetGroups.map((group) => (
+              <div key={group.group}>
+                <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                  <span className="w-3 h-px bg-border inline-block" />{group.group}
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {group.scenarios.map((template) => (
+                    <button
+                      key={template.name}
+                      onClick={() => launchPreset(template)}
+                      className="text-left p-4 rounded-xl border border-border/50 bg-card hover:bg-secondary/30 hover:border-primary/30 transition-all group"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-purple-500/20 transition-colors">
+                          <FlaskConical className="w-3.5 h-3.5 text-purple-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium leading-snug">{template.name}</p>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{template.description}</p>
+                          <div className="flex items-center gap-1.5 mt-2">
+                            <Badge variant="outline" className="text-[10px] capitalize">{template.domain}</Badge>
+                            <Badge variant="outline" className="text-[10px]">{template.variables?.length} vars</Badge>
+                          </div>
+                        </div>
+                        <Plus className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div className="border-t border-border/30" />
+          </div>
+        )}
+
+        {/* Active scenarios from DB */}
+        {filteredScenarios.length > 0 && (
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Active Scenarios</p>
+        )}
+        <div className="space-y-3">
         {filteredScenarios.map((scenario, i) => (
           <motion.div
             key={scenario.id}
@@ -344,12 +398,18 @@ ${focusInstruction}`,
           </motion.div>
         ))}
 
-        {filteredScenarios.length === 0 && (
+        {filteredScenarios.length === 0 && !presetGroups && (
           <div className="text-center py-16 text-muted-foreground">
             <FlaskConical className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p className="text-sm">No scenarios yet. Create one to start modeling.</p>
           </div>
         )}
+        {filteredScenarios.length === 0 && presetGroups && (
+          <div className="text-center py-8 text-muted-foreground">
+            <p className="text-xs">No active scenarios yet — select a template above to get started.</p>
+          </div>
+        )}
+        </div>
       </div>}
     </div>
   );
