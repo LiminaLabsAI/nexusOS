@@ -15,6 +15,7 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import PersistenceLayerStep from './PersistenceLayerStep';
 import CubeFabricModal from './CubeFabricModal';
+import SemanticLayerSummary from './SemanticLayerSummary';
 
 const typeIcons = {
   erp: Server, crm: Globe, iot: Cpu,
@@ -26,7 +27,7 @@ const typeLabels = {
   database: 'Database', api: 'REST API', file_upload: 'File Upload', warehouse: 'Data Warehouse',
 };
 
-const STEPS = ['Select Sources', 'Define Entities', 'Map Fields', 'Review', 'Persistence'];
+const STEPS = ['Select Sources', 'Define Entities', 'Map Fields', 'Summary', 'Persistence'];
 
 const DEFAULT_PERSISTENCE = {
   location: '',
@@ -277,35 +278,16 @@ Keep entity names as business concepts (e.g. "Customer", "Order", "Product", "As
                 </motion.div>
               )}
 
-              {/* Step 3: Review */}
+              {/* Step 3: Summary */}
               {step === 3 && (
-                <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-3">
-                    <p className="text-sm font-semibold text-primary">{layerName}</p>
-                    {layerDescription && <p className="text-xs text-muted-foreground">{layerDescription}</p>}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-card rounded-lg p-3">
-                        <p className="text-[10px] text-muted-foreground mb-1">Data Sources</p>
-                        <p className="text-sm font-bold">{selectedSources.length}</p>
-                        <p className="text-[10px] text-muted-foreground mt-1">{selectedSources.map(s => s.name).join(', ')}</p>
-                      </div>
-                      <div className="bg-card rounded-lg p-3">
-                        <p className="text-[10px] text-muted-foreground mb-1">Entities</p>
-                        <p className="text-sm font-bold">{namedEntities.length}</p>
-                        <p className="text-[10px] text-muted-foreground mt-1">{namedEntities.map(e => e.name).join(', ')}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Entities</p>
-                    {namedEntities.map(entity => (
-                      <div key={entity.name} className="flex items-center gap-2 bg-card border border-border/50 rounded-lg px-3 py-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                        <span className="text-sm font-medium">{entity.name}</span>
-                        {entity.description && <span className="text-xs text-muted-foreground truncate">— {entity.description}</span>}
-                      </div>
-                    ))}
-                  </div>
+                <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                  <SemanticLayerSummary
+                    layerName={layerName}
+                    layerDescription={layerDescription}
+                    namedEntities={namedEntities}
+                    fieldMappings={fieldMappings}
+                    selectedSources={selectedSources}
+                  />
                 </motion.div>
               )}
 
