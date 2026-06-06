@@ -22,10 +22,10 @@ const navItems = [
   { path: '/admin', label: 'Admin Portal', icon: Shield },
 ];
 
-export default function Sidebar({ collapsed, onToggle }) {
+export default function Sidebar({ collapsed, onToggle, persona }) {
   const location = useLocation();
   const { user } = useAuth();
-  const role = user?.role || 'user';
+  const role = persona || user?.role || 'user';
 
   return (
     <motion.aside

@@ -18,7 +18,7 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} persona={persona} />
       <div
         className="transition-all duration-300"
         style={{ marginLeft: collapsed ? 72 : 260 }}
