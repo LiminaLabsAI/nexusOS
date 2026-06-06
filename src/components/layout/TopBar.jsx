@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Search, User, LogOut, ChevronDown } from 'lucide-react';
+import { Bell, Search, User, LogOut, ChevronDown, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const PERSONAS = [
   { value: 'ceo', label: 'CEO', color: 'bg-chart-1' },
@@ -26,6 +27,9 @@ const PERSONAS = [
 
 export default function TopBar({ persona, onPersonaChange, alertCount = 0 }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const isAdmin = user?.role === 'admin';
+  const isAdminPersona = persona === 'administrator';
 
   return (
     <header className="h-16 border-b border-border bg-card/50 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-40">
@@ -45,19 +49,35 @@ export default function TopBar({ persona, onPersonaChange, alertCount = 0 }) {
         {/* Persona Selector */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2 h-9 text-xs border-border/50">
-              <div className={`w-2 h-2 rounded-full ${PERSONAS.find(p => p.value === persona)?.color || 'bg-primary'}`} />
-              {PERSONAS.find(p => p.value === persona)?.label || 'Select Persona'}
+            <Button variant="outline" size="sm" className={`gap-2 h-9 text-xs border-border/50 ${isAdminPersona ? 'border-amber-400/40 text-amber-300' : ''}`}>
+              {isAdminPersona
+                ? <Shield className="w-3.5 h-3.5 text-amber-400" />
+                : <div className={`w-2 h-2 rounded-full ${PERSONAS.find(p => p.value === persona)?.color || 'bg-primary'}`} />
+              }
+              {isAdminPersona ? 'Administrator' : (PERSONAS.find(p => p.value === persona)?.label || 'Select Persona')}
               <ChevronDown className="w-3 h-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {PERSONAS.map((p) => (
-              <DropdownMenuItem key={p.value} onClick={() => onPersonaChange(p.value)}>
+              <DropdownMenuItem key={p.value} onClick={() => { onPersonaChange(p.value); navigate('/'); }}>
                 <div className={`w-2 h-2 rounded-full ${p.color} mr-2`} />
                 {p.label}
               </DropdownMenuItem>
             ))}
+            {isAdmin && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => { onPersonaChange('administrator'); navigate('/admin'); }}
+                  className="text-amber-400 font-medium"
+                >
+                  <Shield className="w-3.5 h-3.5 mr-2 text-amber-400" />
+                  Administrator
+                  <Badge className="ml-auto text-[9px] bg-amber-400/20 text-amber-300 border-amber-400/30">Admin</Badge>
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 
