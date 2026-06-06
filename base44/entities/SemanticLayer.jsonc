@@ -1,0 +1,85 @@
+{
+  "name": "SemanticLayer",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Semantic layer name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Business purpose description"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "building",
+        "active",
+        "error"
+      ],
+      "default": "building",
+      "description": "Layer lifecycle status"
+    },
+    "source_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of connected data sources"
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Business entities in this semantic layer"
+    },
+    "field_mappings": {
+      "type": "object",
+      "description": "Entity-to-source field mappings"
+    },
+    "persistence_location": {
+      "type": "string",
+      "enum": [
+        "local",
+        "cloud"
+      ],
+      "description": "Where pre-aggregations are stored"
+    },
+    "persistence_provider": {
+      "type": "string",
+      "description": "Cloud provider (aws, gcp, azure, etc.)"
+    },
+    "persistence_region": {
+      "type": "string",
+      "description": "Cloud region or endpoint"
+    },
+    "persistence_cloud_type": {
+      "type": "string",
+      "enum": [
+        "public",
+        "private"
+      ],
+      "description": "Public or private cloud"
+    },
+    "persistence_storage_path": {
+      "type": "string",
+      "description": "Bucket name, container, or local path"
+    },
+    "cubes_built": {
+      "type": "number",
+      "description": "Number of Cube.js cubes generated"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

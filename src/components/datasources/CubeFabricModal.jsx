@@ -6,21 +6,27 @@ import { CheckCircle2, Loader2, Layers, Database, Cpu, GitBranch, Cloud, Monitor
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
+import { base44 } from '@/api/base44Client';
 
 const BUILD_STEPS = [
   { id: 'clone',    icon: GitBranch, label: 'Pulling Cube.js semantic engine',          detail: 'cube-js/cube @ latest',           duration: 900 },
   { id: 'schema',   icon: Database,  label: 'Generating data model schema',             detail: 'Building cubes & measures…',       duration: 1100 },
   { id: 'fabric',   icon: Layers,    label: 'Assembling semantic data fabric',          detail: 'Linking joins, dimensions & KPIs…',duration: 1300 },
-  { id: 'persist',  icon: Cloud,     label: 'Configuring persistence layer',            detail: 'Initialising store adapter…',       duration: 900 },
+  { id: 'persist',  icon: Cloud,     label: 'Configuring persistence layer',            detail: null, /* set dynamically */         duration: 900 },
   { id: 'preag',    icon: Cpu,       label: 'Scheduling pre-aggregations',              detail: 'Partitioning rollup strategy…',     duration: 1000 },
   { id: 'done',     icon: Sparkles,  label: 'Semantic layer ready',                    detail: 'All systems connected ✓',           duration: 0 },
 ];
 
 function storageLabel(persistence) {
-  if (persistence.location === 'local') return 'Local (~/.cube/store)';
+  if (!persistence) return '—';
+  if (persistence.location === 'local') {
+    const path = persistence.iamConfig?.localPath || '~/.cube/store';
+    return `Local · ${path}`;
+  }
   const pLabel = persistence.provider?.toUpperCase() || 'Cloud';
   const region = persistence.region ? ` · ${persistence.region}` : '';
-  return `${pLabel}${region}`;
+  const bucket = persistence.iamConfig?.storageBucket ? ` · ${persistence.iamConfig.storageBucket}` : '';
+  return `${pLabel}${region}${bucket}`;
 }
 
 export default function CubeFabricModal({ open, onClose, layerName, persistence, entities, sources }) {
@@ -33,8 +39,26 @@ export default function CubeFabricModal({ open, onClose, layerName, persistence,
     let i = 0;
     let timeout;
 
-    const advance = () => {
-      if (i >= BUILD_STEPS.length - 1) { setCompleted(true); return; }
+    const advance = async () => {
+      if (i >= BUILD_STEPS.length - 1) {
+        // Persist the semantic layer record
+        try {
+          await base44.entities.SemanticLayer.create({
+            name: layerName,
+            status: 'active',
+            source_ids: sources?.map(s => s.id) || [],
+            entities: entities || [],
+            persistence_location: persistence?.location || 'local',
+            persistence_provider: persistence?.provider || '',
+            persistence_region: persistence?.region || '',
+            persistence_cloud_type: persistence?.cloudType || 'public',
+            persistence_storage_path: persistence?.iamConfig?.localPath || persistence?.iamConfig?.storageBucket || '',
+            cubes_built: entities?.length || 0,
+          });
+        } catch (_) { /* non-blocking */ }
+        setCompleted(true);
+        return;
+      }
       const dur = BUILD_STEPS[i].duration;
       timeout = setTimeout(() => {
         i++;
@@ -117,7 +141,9 @@ export default function CubeFabricModal({ open, onClose, layerName, persistence,
                 <div className="flex-1 min-w-0">
                   <span className={cn("font-medium", isDone && "text-emerald-400")}>{s.label}</span>
                   {(active || isDone) && (
-                    <p className="text-[10px] text-muted-foreground">{s.detail}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {s.id === 'persist' ? storageLabel(persistence) : s.detail}
+                    </p>
                   )}
                 </div>
               </motion.div>
