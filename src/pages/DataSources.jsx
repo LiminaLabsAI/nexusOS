@@ -159,21 +159,19 @@ export default function DataSources() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold font-display tracking-tight">Build & Manage Enterprise Memory</h1>
-          <p className="text-sm text-muted-foreground mt-1">Link external systems and monitor their real-time sync status</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div>
+        <h1 className="text-2xl font-bold font-display tracking-tight">Build & Manage Enterprise Memory</h1>
+        <p className="text-sm text-muted-foreground mt-1">Link external systems and monitor their real-time sync status</p>
+        <div className="flex flex-col items-start gap-2 mt-4">
           <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => toast.info('Semantic layer builder coming soon')}>
             <Layers className="w-4 h-4" /> + Create Semantic Layer
           </Button>
-          <Button className="gap-2" onClick={() => setShowIoT(true)}>
+          <Button size="sm" className="gap-2 h-9" onClick={() => setShowIoT(true)}>
             <Cpu className="w-4 h-4" /> Link IoT
           </Button>
           <Dialog open={showCreate} onOpenChange={setShowCreate}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2"><Plus className="w-4 h-4" /> Link System</Button>
+              <Button variant="outline" size="sm" className="gap-2 h-9"><Plus className="w-4 h-4" /> Link System</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Link External System</DialogTitle></DialogHeader>
@@ -236,43 +234,43 @@ export default function DataSources() {
             </DialogContent>
           </Dialog>
         </div>
-
-        <IoTLinkDialog
-          open={showIoT}
-          onOpenChange={setShowIoT}
-          loading={createMutation.isPending}
-          onSubmit={(data) => createMutation.mutate(data)}
-        />
-
-        {/* API Access Dialog */}
-        <Dialog open={showApi} onOpenChange={setShowApi}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader><DialogTitle className="flex items-center gap-2"><Code2 className="w-4 h-4" /> API Access</DialogTitle></DialogHeader>
-            <div className="space-y-4 mt-2 text-sm">
-              <p className="text-muted-foreground text-xs">Use the NexusOS SDK to query data source records programmatically.</p>
-              <div className="space-y-3">
-                {[
-                  { label: 'List all data sources', code: `base44.entities.DataSource.list()` },
-                  { label: 'Filter by status', code: `base44.entities.DataSource.filter({ status: 'connected' })` },
-                  { label: 'Filter by domain', code: `base44.entities.DataSource.filter({ domain: 'manufacturing' })` },
-                  { label: 'Get single source', code: `base44.entities.DataSource.get('<source_id>')` },
-                ].map(({ label, code }) => (
-                  <div key={label}>
-                    <p className="text-xs text-muted-foreground mb-1">{label}</p>
-                    <div className="bg-secondary/60 rounded-lg px-3 py-2 font-mono text-xs text-primary flex items-center justify-between gap-2">
-                      <span className="truncate">{code}</span>
-                      <Button size="icon" variant="ghost" className="h-6 w-6 flex-shrink-0" onClick={() => { navigator.clipboard.writeText(code); toast.success('Copied'); }}>
-                        <FileSpreadsheet className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="text-[10px] text-muted-foreground">Import via: <code className="bg-secondary px-1 rounded">import {'{ base44 }'} from '@/api/base44Client'</code></p>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
+
+      <IoTLinkDialog
+        open={showIoT}
+        onOpenChange={setShowIoT}
+        loading={createMutation.isPending}
+        onSubmit={(data) => createMutation.mutate(data)}
+      />
+
+      {/* API Access Dialog */}
+      <Dialog open={showApi} onOpenChange={setShowApi}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Code2 className="w-4 h-4" /> API Access</DialogTitle></DialogHeader>
+          <div className="space-y-4 mt-2 text-sm">
+            <p className="text-muted-foreground text-xs">Use the NexusOS SDK to query data source records programmatically.</p>
+            <div className="space-y-3">
+              {[
+                { label: 'List all data sources', code: `base44.entities.DataSource.list()` },
+                { label: 'Filter by status', code: `base44.entities.DataSource.filter({ status: 'connected' })` },
+                { label: 'Filter by domain', code: `base44.entities.DataSource.filter({ domain: 'manufacturing' })` },
+                { label: 'Get single source', code: `base44.entities.DataSource.get('<source_id>')` },
+              ].map(({ label, code }) => (
+                <div key={label}>
+                  <p className="text-xs text-muted-foreground mb-1">{label}</p>
+                  <div className="bg-secondary/60 rounded-lg px-3 py-2 font-mono text-xs text-primary flex items-center justify-between gap-2">
+                    <span className="truncate">{code}</span>
+                    <Button size="icon" variant="ghost" className="h-6 w-6 flex-shrink-0" onClick={() => { navigator.clipboard.writeText(code); toast.success('Copied'); }}>
+                      <FileSpreadsheet className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground">Import via: <code className="bg-secondary px-1 rounded">import {'{ base44 }'} from '@/api/base44Client'</code></p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
