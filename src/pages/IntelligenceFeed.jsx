@@ -120,13 +120,26 @@ export default function IntelligenceFeed() {
     : filter === 'alerts' ? combined.filter(c => c._type === 'alert')
     : combined.filter(c => c._type === 'recommendation');
 
+  // Admin grouping
+  const isAdmin = persona === 'administrator';
+  const adminGroups = config.intelligenceGroups || [];
+
+  const getAdminGroup = (item) => adminGroups.find(g => g.match(item));
+
+  const adminGroupedItems = isAdmin ? adminGroups.map(group => ({
+    ...group,
+    items: displayed.filter(item => group.match(item)),
+  })).filter(g => g.items.length > 0) : null;
+
+  const adminUngrouped = isAdmin ? displayed.filter(item => !getAdminGroup(item)) : [];
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold font-display tracking-tight">Intelligence Feed</h1>
-          <p className="text-sm text-muted-foreground mt-1">AI-generated insights, anomalies, and recommendations</p>
+          <p className="text-sm text-muted-foreground mt-1">{isAdmin ? 'Platform-wide AI intelligence — all domains & users' : 'AI-generated insights, anomalies, and recommendations'}</p>
         </div>
         <Button onClick={analyzeKPIs} disabled={analyzing} className="gap-2">
           {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
@@ -156,120 +169,162 @@ export default function IntelligenceFeed() {
         </TabsList>
       </Tabs>
 
-      <div className="space-y-3">
-        <AnimatePresence>
-          {displayed.map((item, i) => (
-            <motion.div
-              key={`${item._type}-${item.id}`}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ delay: i * 0.03 }}
-              className="bg-card rounded-xl border border-border/50 overflow-hidden"
-            >
-              <div
-                className="p-5 cursor-pointer hover:bg-secondary/20 transition-colors"
-                onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={cn(
-                    "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0",
-                    item._type === 'alert'
-                      ? item.severity === 'critical' ? 'bg-red-500/10' : item.severity === 'warning' ? 'bg-amber-400/10' : 'bg-blue-400/10'
-                      : 'bg-emerald-500/10'
-                  )}>
-                    {item._type === 'alert'
-                      ? <AlertTriangle className={cn("w-4 h-4", item.severity === 'critical' ? 'text-red-500' : item.severity === 'warning' ? 'text-amber-400' : 'text-blue-400')} />
-                      : <Lightbulb className="w-4 h-4 text-emerald-400" />
-                    }
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-sm font-semibold">{item.title}</h3>
-                      <Badge variant="outline" className="text-[10px] capitalize">{item._type}</Badge>
-                      {item.severity && (
-                        <Badge variant="outline" className={cn("text-[10px]",
-                          item.severity === 'critical' && 'border-red-500/30 text-red-400',
-                          item.severity === 'warning' && 'border-amber-400/30 text-amber-300',
-                        )}>{item.severity}</Badge>
-                      )}
-                      {item.confidence_score && (
-                        <Badge variant="outline" className="text-[10px]">
-                          <Sparkles className="w-2.5 h-2.5 mr-1" />{item.confidence_score}%
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
-                    <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground">
-                      <span>{item.created_date ? formatDistanceToNow(new Date(item.created_date), { addSuffix: true }) : ''}</span>
-                      {item.domain && <Badge variant="outline" className="text-[10px] h-4 capitalize">{item.domain}</Badge>}
-                      {config.showFinancialImpact && item.financial_impact > 0 && (
-                        <span className="text-emerald-400 font-medium">${item.financial_impact?.toLocaleString()}</span>
-                      )}
-                    </div>
-                  </div>
-                  {expandedId === item.id ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-                </div>
+      {/* Admin grouped view */}
+      {isAdmin && (
+        <div className="space-y-8">
+          {adminGroupedItems && adminGroupedItems.map((group) => (
+            <div key={group.key}>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
+                <span className="w-3 h-px bg-amber-400/50 inline-block" />{group.label}
+                <Badge variant="outline" className="text-[9px] ml-auto">{group.items.length}</Badge>
+              </p>
+              <div className="space-y-2">
+                {group.items.map((item, i) => (
+                  <FeedItem key={`${item._type}-${item.id}`} item={item} i={i} expandedId={expandedId} setExpandedId={setExpandedId} config={config} />
+                ))}
               </div>
-
-              <AnimatePresence>
-                {expandedId === item.id && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="border-t border-border/30 overflow-hidden"
-                  >
-                    <div className="p-5 space-y-3 bg-secondary/10">
-                      {config.showRootCause && item.root_cause && (
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground mb-1">Root Cause Analysis</p>
-                          <p className="text-sm">{item.root_cause}</p>
-                        </div>
-                      )}
-                      {item.impact_estimate && (
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground mb-1">Impact Estimate</p>
-                          <p className="text-sm">{item.impact_estimate}</p>
-                        </div>
-                      )}
-                      {item.reasoning && (
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground mb-1">AI Reasoning</p>
-                          <p className="text-sm">{item.reasoning}</p>
-                        </div>
-                      )}
-                      {config.showExecutionSteps && item.execution_steps?.length > 0 && (
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground mb-1">Execution Steps</p>
-                          <ol className="list-decimal list-inside text-sm space-y-1">
-                            {item.execution_steps.map((step, si) => (
-                              <li key={si} className="text-muted-foreground">{step}</li>
-                            ))}
-                          </ol>
-                        </div>
-                      )}
-                      {config.showFinancialImpact && item.financial_impact > 0 && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-muted-foreground">Financial Impact:</span>
-                          <span className="text-sm font-semibold text-emerald-400">${item.financial_impact?.toLocaleString()}</span>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
+            </div>
           ))}
-        </AnimatePresence>
+          {adminUngrouped.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Other</p>
+              <div className="space-y-2">
+                {adminUngrouped.map((item, i) => (
+                  <FeedItem key={`${item._type}-${item.id}`} item={item} i={i} expandedId={expandedId} setExpandedId={setExpandedId} config={config} />
+                ))}
+              </div>
+            </div>
+          )}
+          {displayed.length === 0 && (
+            <div className="text-center py-16 text-muted-foreground">
+              <Brain className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">No intelligence data yet. Run AI Analysis to generate insights.</p>
+            </div>
+          )}
+        </div>
+      )}
 
-        {displayed.length === 0 && (
-          <div className="text-center py-16 text-muted-foreground">
-            <Brain className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">No intelligence data for your domain. Run AI Analysis to generate insights.</p>
-          </div>
-        )}
-      </div>
+      {/* Standard (non-admin) view */}
+      {!isAdmin && (
+        <div className="space-y-3">
+          <AnimatePresence>
+            {displayed.map((item, i) => (
+              <FeedItem key={`${item._type}-${item.id}`} item={item} i={i} expandedId={expandedId} setExpandedId={setExpandedId} config={config} />
+            ))}
+          </AnimatePresence>
+          {displayed.length === 0 && (
+            <div className="text-center py-16 text-muted-foreground">
+              <Brain className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">No intelligence data for your domain. Run AI Analysis to generate insights.</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
+  );
+}
+
+function FeedItem({ item, i, expandedId, setExpandedId, config }) {
+  return (
+    <motion.div
+      key={`${item._type}-${item.id}`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ delay: i * 0.03 }}
+      className="bg-card rounded-xl border border-border/50 overflow-hidden"
+    >
+      <div
+        className="p-5 cursor-pointer hover:bg-secondary/20 transition-colors"
+        onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+      >
+        <div className="flex items-start gap-3">
+          <div className={cn(
+            "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0",
+            item._type === 'alert'
+              ? item.severity === 'critical' ? 'bg-red-500/10' : item.severity === 'warning' ? 'bg-amber-400/10' : 'bg-blue-400/10'
+              : 'bg-emerald-500/10'
+          )}>
+            {item._type === 'alert'
+              ? <AlertTriangle className={cn("w-4 h-4", item.severity === 'critical' ? 'text-red-500' : item.severity === 'warning' ? 'text-amber-400' : 'text-blue-400')} />
+              : <Lightbulb className="w-4 h-4 text-emerald-400" />
+            }
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm font-semibold">{item.title}</h3>
+              <Badge variant="outline" className="text-[10px] capitalize">{item._type}</Badge>
+              {item.severity && (
+                <Badge variant="outline" className={cn("text-[10px]",
+                  item.severity === 'critical' && 'border-red-500/30 text-red-400',
+                  item.severity === 'warning' && 'border-amber-400/30 text-amber-300',
+                )}>{item.severity}</Badge>
+              )}
+              {item.confidence_score && (
+                <Badge variant="outline" className="text-[10px]">
+                  <Sparkles className="w-2.5 h-2.5 mr-1" />{item.confidence_score}%
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
+            <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground">
+              <span>{item.created_date ? formatDistanceToNow(new Date(item.created_date), { addSuffix: true }) : ''}</span>
+              {item.domain && <Badge variant="outline" className="text-[10px] h-4 capitalize">{item.domain}</Badge>}
+              {config.showFinancialImpact && item.financial_impact > 0 && (
+                <span className="text-emerald-400 font-medium">${item.financial_impact?.toLocaleString()}</span>
+              )}
+            </div>
+          </div>
+          {expandedId === item.id ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+        </div>
+      </div>
+      <AnimatePresence>
+        {expandedId === item.id && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-t border-border/30 overflow-hidden"
+          >
+            <div className="p-5 space-y-3 bg-secondary/10">
+              {config.showRootCause && item.root_cause && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Root Cause Analysis</p>
+                  <p className="text-sm">{item.root_cause}</p>
+                </div>
+              )}
+              {item.impact_estimate && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Impact Estimate</p>
+                  <p className="text-sm">{item.impact_estimate}</p>
+                </div>
+              )}
+              {item.reasoning && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">AI Reasoning</p>
+                  <p className="text-sm">{item.reasoning}</p>
+                </div>
+              )}
+              {config.showExecutionSteps && item.execution_steps?.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Execution Steps</p>
+                  <ol className="list-decimal list-inside text-sm space-y-1">
+                    {item.execution_steps.map((step, si) => (
+                      <li key={si} className="text-muted-foreground">{step}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+              {config.showFinancialImpact && item.financial_impact > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-muted-foreground">Financial Impact:</span>
+                  <span className="text-sm font-semibold text-emerald-400">${item.financial_impact?.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }

@@ -144,7 +144,7 @@ ${focusInstruction}`,
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold font-display tracking-tight">Simulation Lab</h1>
-          <p className="text-sm text-muted-foreground mt-1">What-if analysis and scenario modeling</p>
+          <p className="text-sm text-muted-foreground mt-1">{persona === 'administrator' ? 'Platform-wide scenario modeling — governance, risk & transformation' : 'What-if analysis and scenario modeling'}</p>
         </div>
         {activeTab === 'scenarios' && (
           <div className="flex items-center gap-2">

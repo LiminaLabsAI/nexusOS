@@ -140,6 +140,73 @@ export const PERSONA_SCENARIO_GROUPS = {
       ],
     },
   ],
+  administrator: [
+    {
+      group: 'Platform & System Governance',
+      scenarios: [
+        {
+          name: 'User Growth — Platform Scaling',
+          description: 'Model infrastructure cost and performance impact of 3x user base growth over 12 months.',
+          domain: 'operations',
+          variables: [
+            { name: 'Current Users', current_value: 500, simulated_value: 1500, unit: '' },
+            { name: 'Infra Cost Increase', current_value: 0, simulated_value: 120000, unit: '$' },
+            { name: 'Latency Impact', current_value: 80, simulated_value: 140, unit: 'ms' },
+          ],
+        },
+        {
+          name: 'Role Proliferation — Access Governance Audit',
+          description: 'Assess security exposure risk if unchecked custom role creation exceeds governance thresholds.',
+          domain: 'hr',
+          variables: [
+            { name: 'Custom Roles', current_value: 5, simulated_value: 40, unit: '' },
+            { name: 'Audit Effort', current_value: 0, simulated_value: 160, unit: 'hrs' },
+            { name: 'Risk Score Increase', current_value: 10, simulated_value: 68, unit: 'pts' },
+          ],
+        },
+      ],
+    },
+    {
+      group: 'Cross-Domain Risk & Compliance',
+      scenarios: [
+        {
+          name: 'Data Breach Scenario — GDPR Exposure',
+          description: 'Estimate financial and reputational impact of a mid-scale data breach across all domains.',
+          domain: 'finance',
+          variables: [
+            { name: 'Records Exposed', current_value: 0, simulated_value: 50000, unit: '' },
+            { name: 'Regulatory Fine', current_value: 0, simulated_value: 4000000, unit: '$' },
+            { name: 'Remediation Cost', current_value: 0, simulated_value: 1200000, unit: '$' },
+          ],
+        },
+        {
+          name: 'AI Agent Autonomy — Escalation Policy Change',
+          description: 'Model risk exposure if AI agents are allowed to auto-execute recommendations without human approval.',
+          domain: 'operations',
+          variables: [
+            { name: 'Auto-Execute Rate', current_value: 0, simulated_value: 60, unit: '%' },
+            { name: 'Error Incident Rate', current_value: 0.5, simulated_value: 4, unit: '%' },
+            { name: 'Estimated Annual Loss', current_value: 0, simulated_value: 800000, unit: '$' },
+          ],
+        },
+      ],
+    },
+    {
+      group: 'Operational Transformation',
+      scenarios: [
+        {
+          name: 'Full Enterprise Rollout — All Business Units',
+          description: 'Simulate adoption curve and ROI of deploying NexusOS across all 8 business units.',
+          domain: 'finance',
+          variables: [
+            { name: 'Business Units', current_value: 2, simulated_value: 8, unit: '' },
+            { name: 'Rollout Duration', current_value: 0, simulated_value: 9, unit: 'mo' },
+            { name: 'Annual Value Realised', current_value: 0, simulated_value: 22000000, unit: '$' },
+          ],
+        },
+      ],
+    },
+  ],
   cfo: [
     {
       group: 'P&L Scenarios',
@@ -207,6 +274,9 @@ export const PERSONA_SCENARIO_GROUPS = {
     },
   ],
 };
+
+// Admin scenario groups added at end of PERSONA_SCENARIO_GROUPS object
+// (appended before the export of PERSONA_CONFIG below)
 
 export const PERSONA_CONFIG = {
   ceo: {
@@ -326,6 +396,53 @@ export const PERSONA_CONFIG = {
     showRootCause: true,
     bannerColor: 'from-violet-500/10 to-transparent',
     bannerText: 'Full intelligence view — read only',
+  },
+  administrator: {
+    label: 'Administrator',
+    domains: [], // all domains — full visibility
+    prioritySeverities: ['critical', 'warning', 'info'],
+    defaultFilter: 'all',
+    showFinancialImpact: true,
+    showExecutionSteps: true,
+    showRiskFlags: true,
+    showAlternatives: true,
+    showRootCause: true,
+    bannerColor: 'from-amber-500/10 to-transparent',
+    bannerText: 'System-wide view — all domains, all users, full platform intelligence',
+    // Intelligence Feed groups
+    intelligenceGroups: [
+      { key: 'security', label: 'Security & Access', match: (item) => ['hr', 'operations'].includes(item.domain) },
+      { key: 'critical', label: 'Critical Platform Alerts', match: (item) => item.severity === 'critical' || item.priority === 'critical' },
+      { key: 'governance', label: 'Governance & Compliance', match: (item) => ['finance'].includes(item.domain) },
+      { key: 'operational', label: 'Operational Intelligence', match: (item) => ['manufacturing', 'logistics', 'operations'].includes(item.domain) },
+      { key: 'commercial', label: 'Commercial & Retail', match: (item) => ['retail'].includes(item.domain) },
+    ],
+    // Alerts groups
+    alertGroups: [
+      { key: 'critical', label: 'Critical — Immediate Action', filter: (a) => a.severity === 'critical' && a.status === 'new' },
+      { key: 'access', label: 'Access & Security', filter: (a) => ['hr'].includes(a.domain) },
+      { key: 'compliance', label: 'Compliance & Finance', filter: (a) => ['finance'].includes(a.domain) },
+      { key: 'operations', label: 'Operations & Supply Chain', filter: (a) => ['manufacturing', 'logistics', 'operations'].includes(a.domain) },
+      { key: 'commercial', label: 'Commercial', filter: (a) => ['retail'].includes(a.domain) },
+      { key: 'resolved', label: 'Resolved / Dismissed', filter: (a) => ['resolved', 'dismissed'].includes(a.status) },
+    ],
+    // Recommendations groups
+    recGroups: [
+      { key: 'pending_critical', label: 'Awaiting Approval — Critical', filter: (r) => r.status === 'pending' && r.priority === 'critical' },
+      { key: 'pending', label: 'Pending Review', filter: (r) => r.status === 'pending' && r.priority !== 'critical' },
+      { key: 'in_flight', label: 'In-Flight (Approved / Executing)', filter: (r) => ['approved', 'executing'].includes(r.status) },
+      { key: 'completed', label: 'Completed', filter: (r) => r.status === 'completed' },
+      { key: 'rejected', label: 'Rejected / Failed', filter: (r) => ['rejected', 'failed'].includes(r.status) },
+    ],
+    simulation: {
+      bannerText: 'Platform-wide scenario modeling — system, governance & cross-domain impact',
+      defaultDomain: 'finance',
+      allowedDomains: ['manufacturing', 'logistics', 'retail', 'finance', 'hr', 'operations'],
+      showVariableDetail: true,
+      showBestWorstCase: true,
+      showConfidence: true,
+      promptFocus: 'Focus on platform-wide business impact, cross-domain risk, compliance, governance, user impact, and system resilience. Include financial, operational, and strategic dimensions.',
+    },
   },
   // fallback for admin, user, etc.
   default: {

@@ -57,11 +57,18 @@ export default function Alerts() {
   const criticalCount = domainFiltered.filter(a => a.severity === 'critical').length;
   const newCount = domainFiltered.filter(a => a.status === 'new').length;
 
+  // Admin grouping
+  const isAdmin = persona === 'administrator';
+  const adminAlertGroups = config.alertGroups || [];
+  const adminGrouped = isAdmin
+    ? adminAlertGroups.map(g => ({ ...g, items: filtered.filter(g.filter) })).filter(g => g.items.length > 0)
+    : null;
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold font-display tracking-tight">Alert Management</h1>
-        <p className="text-sm text-muted-foreground mt-1">Monitor, investigate, and resolve enterprise anomalies</p>
+        <p className="text-sm text-muted-foreground mt-1">{isAdmin ? 'Platform-wide alert monitoring — all domains, all users' : 'Monitor, investigate, and resolve enterprise anomalies'}</p>
       </div>
 
       {/* Persona summary bar */}
@@ -109,91 +116,111 @@ export default function Alerts() {
         </Select>
       </div>
 
-      {/* Alerts list */}
-      <div className="space-y-3">
-        {filtered.map((alert, i) => {
-          const sev = severityConfig[alert.severity] || severityConfig.info;
-          const stat = statusConfig[alert.status] || statusConfig.new;
-          const Icon = sev.icon;
-
-          return (
-            <motion.div
-              key={alert.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.03 }}
-              className="bg-card rounded-xl border border-border/50 p-5"
-            >
-              <div className="flex items-start gap-4">
-                <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0", sev.bg)}>
-                  <Icon className={cn("w-5 h-5", sev.color)} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <h3 className="text-sm font-semibold">{alert.title}</h3>
-                    <Badge variant="outline" className={cn("text-[10px]", sev.badge)}>{alert.severity}</Badge>
-                    <Badge className={cn("text-[10px]", stat.color)}>{stat.label}</Badge>
-                    {alert.ai_confidence && (
-                      <Badge variant="outline" className="text-[10px]">AI: {alert.ai_confidence}%</Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground">{alert.description}</p>
-
-                  {config.showRootCause && alert.root_cause && (
-                    <div className="mt-3 p-3 bg-secondary/30 rounded-lg">
-                      <p className="text-xs font-medium text-muted-foreground mb-1">Root Cause</p>
-                      <p className="text-xs">{alert.root_cause}</p>
-                    </div>
-                  )}
-
-                  {alert.impact_estimate && (
-                    <div className="mt-2">
-                      <span className="text-xs text-muted-foreground">Impact: </span>
-                      <span className="text-xs font-medium">{alert.impact_estimate}</span>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-2 mt-3 flex-wrap">
-                    {alert.status === 'new' && (
-                      <>
-                        <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
-                          onClick={() => updateMutation.mutate({ id: alert.id, data: { status: 'acknowledged' } })}>
-                          <Eye className="w-3 h-3" /> Acknowledge
-                        </Button>
-                        <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
-                          onClick={() => updateMutation.mutate({ id: alert.id, data: { status: 'investigating' } })}>
-                          <SearchIcon className="w-3 h-3" /> Investigate
-                        </Button>
-                        <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground"
-                          onClick={() => updateMutation.mutate({ id: alert.id, data: { status: 'dismissed' } })}>
-                          <XCircle className="w-3 h-3" /> Dismiss
-                        </Button>
-                      </>
-                    )}
-                    {(alert.status === 'acknowledged' || alert.status === 'investigating') && (
-                      <Button size="sm" className="h-7 text-xs gap-1"
-                        onClick={() => updateMutation.mutate({ id: alert.id, data: { status: 'resolved' } })}>
-                        <CheckCircle className="w-3 h-3" /> Resolve
-                      </Button>
-                    )}
-                    {alert.domain && <Badge variant="outline" className="text-[10px] capitalize">{alert.domain}</Badge>}
-                    <span className="text-[10px] text-muted-foreground ml-auto">
-                      {alert.created_date ? format(new Date(alert.created_date), 'MMM d, h:mm a') : ''}
-                    </span>
-                  </div>
-                </div>
+      {/* Admin grouped alerts */}
+      {isAdmin && adminGrouped && (
+        <div className="space-y-8">
+          {adminGrouped.map((group) => (
+            <div key={group.key}>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
+                <span className="w-3 h-px bg-amber-400/50 inline-block" />{group.label}
+                <Badge variant="outline" className="text-[9px] ml-auto">{group.items.length}</Badge>
+              </p>
+              <div className="space-y-3">
+                {group.items.map((alert, i) => <AlertCard key={alert.id} alert={alert} i={i} config={config} updateMutation={updateMutation} />)}
               </div>
-            </motion.div>
-          );
-        })}
+            </div>
+          ))}
+          {filtered.length === 0 && (
+            <div className="text-center py-16 text-muted-foreground">
+              <CheckCircle className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">No alerts match your filters</p>
+            </div>
+          )}
+        </div>
+      )}
 
+      {/* Standard alerts list */}
+      {!isAdmin && <div className="space-y-3">
+        {filtered.map((alert, i) => <AlertCard key={alert.id} alert={alert} i={i} config={config} updateMutation={updateMutation} />)}
         {filtered.length === 0 && (
           <div className="text-center py-16 text-muted-foreground">
             <CheckCircle className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p className="text-sm">No alerts match your filters</p>
           </div>
         )}
-      </div>
+      </div>}
+
     </div>
+  );
+}
+
+function AlertCard({ alert, i, config, updateMutation }) {
+  const sev = severityConfig[alert.severity] || severityConfig.info;
+  const stat = statusConfig[alert.status] || statusConfig.new;
+  const Icon = sev.icon;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: i * 0.03 }}
+      className="bg-card rounded-xl border border-border/50 p-5"
+    >
+      <div className="flex items-start gap-4">
+        <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0", sev.bg)}>
+          <Icon className={cn("w-5 h-5", sev.color)} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <h3 className="text-sm font-semibold">{alert.title}</h3>
+            <Badge variant="outline" className={cn("text-[10px]", sev.badge)}>{alert.severity}</Badge>
+            <Badge className={cn("text-[10px]", stat.color)}>{stat.label}</Badge>
+            {alert.ai_confidence && (
+              <Badge variant="outline" className="text-[10px]">AI: {alert.ai_confidence}%</Badge>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">{alert.description}</p>
+          {config.showRootCause && alert.root_cause && (
+            <div className="mt-3 p-3 bg-secondary/30 rounded-lg">
+              <p className="text-xs font-medium text-muted-foreground mb-1">Root Cause</p>
+              <p className="text-xs">{alert.root_cause}</p>
+            </div>
+          )}
+          {alert.impact_estimate && (
+            <div className="mt-2">
+              <span className="text-xs text-muted-foreground">Impact: </span>
+              <span className="text-xs font-medium">{alert.impact_estimate}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
+            {alert.status === 'new' && (
+              <>
+                <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
+                  onClick={() => updateMutation.mutate({ id: alert.id, data: { status: 'acknowledged' } })}>
+                  <Eye className="w-3 h-3" /> Acknowledge
+                </Button>
+                <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
+                  onClick={() => updateMutation.mutate({ id: alert.id, data: { status: 'investigating' } })}>
+                  <SearchIcon className="w-3 h-3" /> Investigate
+                </Button>
+                <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground"
+                  onClick={() => updateMutation.mutate({ id: alert.id, data: { status: 'dismissed' } })}>
+                  <XCircle className="w-3 h-3" /> Dismiss
+                </Button>
+              </>
+            )}
+            {(alert.status === 'acknowledged' || alert.status === 'investigating') && (
+              <Button size="sm" className="h-7 text-xs gap-1"
+                onClick={() => updateMutation.mutate({ id: alert.id, data: { status: 'resolved' } })}>
+                <CheckCircle className="w-3 h-3" /> Resolve
+              </Button>
+            )}
+            {alert.domain && <Badge variant="outline" className="text-[10px] capitalize">{alert.domain}</Badge>}
+            <span className="text-[10px] text-muted-foreground ml-auto">
+              {alert.created_date ? format(new Date(alert.created_date), 'MMM d, h:mm a') : ''}
+            </span>
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 }
