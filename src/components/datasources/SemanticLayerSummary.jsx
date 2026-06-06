@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   Database, ChevronRight, ArrowRight, Link2, Layers,
   Server, Globe, Cpu, FileSpreadsheet, Cloud, Warehouse,
-  CheckCircle2, AlertCircle, ChevronDown, ChevronUp
+  CheckCircle2, AlertCircle, ChevronDown, ChevronUp, ShieldCheck
 } from 'lucide-react';
+import SemanticLayerGraph from './SemanticLayerGraph';
 
 const typeIcons = {
   erp: Server, crm: Globe, iot: Cpu,
@@ -148,7 +150,7 @@ function EntityCard({ entity, mappings, sources, defaultOpen }) {
   );
 }
 
-export default function SemanticLayerSummary({ layerName, layerDescription, namedEntities, fieldMappings, selectedSources }) {
+export default function SemanticLayerSummary({ layerName, layerDescription, namedEntities, fieldMappings, selectedSources, onAccepted, accepted }) {
   const relationships = inferRelationships(namedEntities, fieldMappings);
   const totalFields = namedEntities.reduce((sum, e) => sum + (fieldMappings[e.name]?.length || 0), 0);
 
@@ -175,6 +177,18 @@ export default function SemanticLayerSummary({ layerName, layerDescription, name
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Visual Graph */}
+      <div>
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Visual Schema</p>
+        <SemanticLayerGraph
+          namedEntities={namedEntities}
+          selectedSources={selectedSources}
+          fieldMappings={fieldMappings}
+          relationships={relationships}
+        />
+        <p className="text-[10px] text-muted-foreground mt-1.5 text-center">Hover over nodes to inspect. Blue nodes = entities, outlined = sources. Amber lines = relationships.</p>
       </div>
 
       {/* Sources row */}
@@ -239,9 +253,34 @@ export default function SemanticLayerSummary({ layerName, layerDescription, name
         </div>
       )}
 
-      <div className="flex items-center gap-2 bg-emerald-500/5 border border-emerald-500/20 rounded-lg px-4 py-3 text-xs text-emerald-400">
-        <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-        Everything looks good. Set the persistence layer to confirm the build.
+      {/* Engineer acceptance gate */}
+      <div className={cn(
+        "rounded-xl border px-4 py-4 transition-colors",
+        accepted
+          ? "bg-emerald-500/8 border-emerald-500/30"
+          : "bg-secondary/30 border-border/50"
+      )}>
+        <div className="flex items-start gap-3">
+          <button
+            onClick={() => onAccepted(!accepted)}
+            className={cn(
+              "w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all",
+              accepted
+                ? "bg-emerald-500 border-emerald-500"
+                : "border-muted-foreground hover:border-primary"
+            )}
+          >
+            {accepted && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+          </button>
+          <div>
+            <p className={cn("text-sm font-semibold", accepted ? "text-emerald-400" : "text-foreground")}>
+              {accepted ? "Schema accepted — ready to configure persistence" : "Review & accept this schema"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              I have reviewed the entity definitions, field mappings, and inferred relationships above and confirm this semantic layer design is correct.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -51,6 +51,7 @@ export default function SemanticLayerWizard({ open, onOpenChange, sources }) {
   const [mapTab, setMapTab] = useState('ai'); // 'ai' | 'csv'
   const [persistence, setPersistence] = useState(DEFAULT_PERSISTENCE);
   const [showFabric, setShowFabric] = useState(false);
+  const [schemaAccepted, setSchemaAccepted] = useState(false);
 
   const selectedSources = sources.filter(s => selectedSourceIds.has(s.id));
 
@@ -119,6 +120,7 @@ Keep entity names as business concepts (e.g. "Customer", "Order", "Product", "As
     setAiSuggestions(null);
     setPersistence(DEFAULT_PERSISTENCE);
     setMapTab('ai');
+    setSchemaAccepted(false);
   };
 
   const handleClose = () => { resetState(); onOpenChange(false); };
@@ -331,6 +333,8 @@ Keep entity names as business concepts (e.g. "Customer", "Order", "Product", "As
                     namedEntities={namedEntities}
                     fieldMappings={fieldMappings}
                     selectedSources={selectedSources}
+                    accepted={schemaAccepted}
+                    onAccepted={setSchemaAccepted}
                   />
                 </motion.div>
               )}
@@ -368,10 +372,10 @@ Keep entity names as business concepts (e.g. "Customer", "Order", "Product", "As
                 </Button>
               )}
               {step === 3 && (
-                <Button size="sm" onClick={() => setStep(4)} className="gap-1.5">
-                  Set Persistence <ChevronRight className="w-4 h-4" />
-                </Button>
-              )}
+                 <Button size="sm" disabled={!schemaAccepted} onClick={() => setStep(4)} className="gap-1.5">
+                   Set Persistence <ChevronRight className="w-4 h-4" />
+                 </Button>
+               )}
               {step === 4 && (
                 <Button size="sm" disabled={!canProceedStep4 || isCreating} onClick={handleCreate}
                   className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
