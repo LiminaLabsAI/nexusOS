@@ -61,29 +61,34 @@ export default function SemanticLayerWizard({ open, onOpenChange, sources }) {
 
   const handleGenerateSuggestions = async () => {
     setIsGenerating(true);
-    const sourceDescriptions = selectedSources.map(s => `${s.name} (${typeLabels[s.type] || s.type}, domain: ${s.domain})`).join(', ');
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are a data architect. Given these enterprise data sources: ${sourceDescriptions}, suggest a semantic layer design.
+    try {
+      const sourceDescriptions = selectedSources.map(s => `${s.name} (${typeLabels[s.type] || s.type}, domain: ${s.domain})`).join(', ');
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a data architect. Given these enterprise data sources: ${sourceDescriptions}, suggest a semantic layer design.
 Return a JSON object with:
 - suggestedEntities: array of { name, description, sourceIds } (3-5 business entities)
 - suggestedMappings: object mapping entityName to array of { field, sourceField, sourceName, type }
 Keep entity names as business concepts (e.g. "Customer", "Order", "Product", "Asset").`,
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          suggestedEntities: {
-            type: 'array',
-            items: { type: 'object', properties: { name: { type: 'string' }, description: { type: 'string' }, sourceIds: { type: 'array', items: { type: 'string' } } } }
-          },
-          suggestedMappings: { type: 'object' }
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            suggestedEntities: {
+              type: 'array',
+              items: { type: 'object', properties: { name: { type: 'string' }, description: { type: 'string' }, sourceIds: { type: 'array', items: { type: 'string' } } } }
+            },
+            suggestedMappings: { type: 'object' }
+          }
         }
-      }
-    });
-    setAiSuggestions(result);
-    if (result?.suggestedEntities) setEntities(result.suggestedEntities.map(e => ({ name: e.name, description: e.description })));
-    if (result?.suggestedMappings) setFieldMappings(result.suggestedMappings);
-    setIsGenerating(false);
-    setStep(1);
+      });
+      setAiSuggestions(result);
+      if (result?.suggestedEntities) setEntities(result.suggestedEntities.map(e => ({ name: e.name, description: e.description })));
+      if (result?.suggestedMappings) setFieldMappings(result.suggestedMappings);
+    } catch (err) {
+      toast.error('AI analysis failed — you can define entities manually');
+    } finally {
+      setIsGenerating(false);
+      setStep(1);
+    }
   };
 
   const handleCreate = async () => {
