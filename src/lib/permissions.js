@@ -7,6 +7,7 @@
 export const ROLES = {
   admin:         { label: 'Admin',           color: 'bg-amber-400/20 text-amber-300 border-amber-400/30',    description: 'Full access to all modules, user management, and system configuration.' },
   data_engineer: { label: 'Data Engineer',   color: 'bg-cyan-400/20 text-cyan-300 border-cyan-400/30',       description: 'Exclusive access to Build & Manage Enterprise Memory (Data Fabric).' },
+  ai_engineer:   { label: 'AI Engineer',     color: 'bg-purple-400/20 text-purple-300 border-purple-400/30', description: 'Exclusive access to the AI Agents module.' },
   analyst:       { label: 'Analyst',         color: 'bg-violet-400/20 text-violet-300 border-violet-400/30', description: 'Read-only intelligence, alerts, recommendations, and scenarios. No admin/data/agents.' },
   operator:      { label: 'Operator',        color: 'bg-blue-400/20 text-blue-300 border-blue-400/30',       description: 'Operational modules: Command Center, Alerts, Recommendations, Data Fabric.' },
   viewer:        { label: 'Viewer',          color: 'bg-slate-400/20 text-slate-300 border-slate-400/30',    description: 'Read-only access to Command Center and Intelligence Feed only.' },
@@ -17,6 +18,7 @@ export const ROLES = {
 export const ROLE_ROUTES = {
   admin:         ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios', '/agents', '/data-sources', '/settings', '/admin', '/supply-chain'],
   data_engineer: ['/data-sources'],
+  ai_engineer:   ['/agents'],
   analyst:       ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios', '/supply-chain'],
   operator:      ['/', '/alerts', '/recommendations', '/data-sources', '/supply-chain'],
   viewer:        ['/', '/intelligence'],

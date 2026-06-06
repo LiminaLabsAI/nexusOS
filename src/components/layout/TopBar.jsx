@@ -21,6 +21,7 @@ const PERSONAS = [
   { value: 'supply_chain', label: 'Supply Chain', color: 'bg-chart-5' },
   { value: 'operations', label: 'Operations Mgr', color: 'bg-primary' },
   { value: 'data_engineer', label: 'Data Engineer', color: 'bg-cyan-500' },
+  { value: 'ai_engineer', label: 'AI Engineer', color: 'bg-purple-500' },
 ];
 
 export default function TopBar({ persona, onPersonaChange, alertCount = 0 }) {

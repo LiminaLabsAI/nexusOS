@@ -14,7 +14,7 @@ import { Link } from 'react-router-dom';
 import {
   Shield, Users, UserPlus, Mail, Crown, User,
   Loader2, CheckCircle, Activity, Lock,
-  Check, Minus, Eye, Database
+  Check, Minus, Eye, Database, Bot
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -25,6 +25,7 @@ import { ROLES, ROLE_ROUTES, ROUTE_LABELS } from '@/lib/permissions';
 const ROLE_ICONS = {
   admin:         Crown,
   data_engineer: Database,
+  ai_engineer:   Bot,
   analyst:       Activity,
   operator:      Shield,
   viewer:        Eye,
