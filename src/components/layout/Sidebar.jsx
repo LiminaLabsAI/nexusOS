@@ -17,7 +17,7 @@ const navItems = [
   { path: '/recommendations', label: 'Recommendations', icon: Lightbulb },
   { path: '/scenarios', label: 'Simulation Lab', icon: FlaskConical },
   { path: '/agents', label: 'AI Agents', icon: Bot },
-  { path: '/data-sources', label: 'Data Fabric', icon: Database },
+  { path: '/data-sources', label: 'Build & Manage Enterprise Memory', icon: Database },
   { path: '/settings', label: 'Settings', icon: Settings },
   { path: '/admin', label: 'Admin Portal', icon: Shield },
 ];

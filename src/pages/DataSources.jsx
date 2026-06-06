@@ -161,7 +161,7 @@ export default function DataSources() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-display tracking-tight">Data Fabric</h1>
+          <h1 className="text-2xl font-bold font-display tracking-tight">Build & Manage Enterprise Memory</h1>
           <p className="text-sm text-muted-foreground mt-1">Link external systems and monitor their real-time sync status</p>
         </div>
         <div className="flex items-center gap-2">
