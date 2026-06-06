@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 import IoTLinkDialog from '@/components/datasources/IoTLinkDialog';
+import SemanticLayerWizard from '@/components/datasources/SemanticLayerWizard';
 import {
   Database, Plus, Wifi, WifiOff, RefreshCw, Loader2, Trash2,
   Server, Cloud, Cpu, FileSpreadsheet, Globe, Warehouse,
@@ -85,6 +86,7 @@ export default function DataSources() {
   const [showCreate, setShowCreate] = useState(false);
   const [showApi, setShowApi] = useState(false);
   const [showIoT, setShowIoT] = useState(false);
+  const [showSemanticLayer, setShowSemanticLayer] = useState(false);
   const [linkingId, setLinkingId] = useState(null);
   const [newSource, setNewSource] = useState({ name: '', type: 'erp', provider: '', domain: 'manufacturing', sync_frequency: 'daily' });
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -230,11 +232,17 @@ export default function DataSources() {
           <Button size="sm" variant="outline" className="gap-2 h-9" onClick={() => setShowIoT(true)}>
             <Cpu className="w-4 h-4" /> Link IoT Devices
           </Button>
-          <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => toast.info('Semantic layer builder coming soon')}>
+          <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => setShowSemanticLayer(true)}>
             <Layers className="w-4 h-4" /> + Create Semantic Layer
           </Button>
         </div>
       </div>
+
+      <SemanticLayerWizard
+        open={showSemanticLayer}
+        onOpenChange={setShowSemanticLayer}
+        sources={sources}
+      />
 
       <IoTLinkDialog
         open={showIoT}
