@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useOutletContext } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,29 +8,33 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Lightbulb, Check, X, Play, ChevronDown, ChevronUp,
-  DollarSign, AlertTriangle, ArrowRight, Sparkles
+  DollarSign, AlertTriangle, Sparkles, TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
+import { getPersonaConfig, filterByPersona } from '@/lib/personaConfig';
 
 const priorityColors = {
   critical: 'border-red-500/30 text-red-400',
-  high: 'border-amber-400/30 text-amber-300',
-  medium: 'border-blue-400/30 text-blue-300',
-  low: 'border-muted-foreground/30 text-muted-foreground',
+  high:     'border-amber-400/30 text-amber-300',
+  medium:   'border-blue-400/30 text-blue-300',
+  low:      'border-muted-foreground/30 text-muted-foreground',
 };
 
 const statusColors = {
-  pending: 'bg-amber-400/20 text-amber-300',
-  approved: 'bg-blue-500/20 text-blue-400',
-  rejected: 'bg-red-500/20 text-red-400',
+  pending:   'bg-amber-400/20 text-amber-300',
+  approved:  'bg-blue-500/20 text-blue-400',
+  rejected:  'bg-red-500/20 text-red-400',
   executing: 'bg-purple-500/20 text-purple-400',
   completed: 'bg-emerald-500/20 text-emerald-400',
-  failed: 'bg-red-500/20 text-red-400',
+  failed:    'bg-red-500/20 text-red-400',
 };
 
 export default function Recommendations() {
+  const { persona } = useOutletContext() || {};
+  const config = getPersonaConfig(persona);
+
   const [expandedId, setExpandedId] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [outcomeNotes, setOutcomeNotes] = useState({});
@@ -45,8 +50,6 @@ export default function Recommendations() {
     mutationFn: ({ id, data }) => base44.entities.Recommendation.update(id, data),
     onSuccess: (_, { id, data }) => {
       queryClient.invalidateQueries({ queryKey: ['recommendations'] });
-      
-      // Log agent activity
       base44.entities.AgentLog.create({
         agent_type: data.status === 'executing' ? 'execution' : 'learning',
         action: `Recommendation ${data.status}: ${recommendations.find(r => r.id === id)?.title}`,
@@ -56,16 +59,44 @@ export default function Recommendations() {
     },
   });
 
-  const filtered = recommendations.filter(r => {
+  // Domain filter first
+  const domainFiltered = filterByPersona(recommendations, persona);
+
+  const filtered = domainFiltered.filter(r => {
     if (statusFilter !== 'all' && r.status !== statusFilter) return false;
     return true;
   });
+
+  // Summary stats
+  const totalImpact = domainFiltered.reduce((sum, r) => sum + (r.financial_impact || 0), 0);
+  const pendingCount = domainFiltered.filter(r => r.status === 'pending').length;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold font-display tracking-tight">Recommendations</h1>
         <p className="text-sm text-muted-foreground mt-1">AI-generated action recommendations with execution tracking</p>
+      </div>
+
+      {/* Persona summary bar */}
+      <div className={cn("px-4 py-3 rounded-lg bg-gradient-to-r border border-border/30 flex items-center gap-6 flex-wrap", config.bannerColor)}>
+        <div className="text-xs">
+          <span className="font-medium text-foreground">{config.label} view</span>
+          {config.domains.length > 0 && (
+            <span className="text-muted-foreground ml-2">
+              — {config.domains.map(d => <Badge key={d} variant="outline" className="text-[10px] mr-1 capitalize">{d}</Badge>)}
+            </span>
+          )}
+        </div>
+        <div className="flex gap-4 ml-auto text-xs">
+          {config.showFinancialImpact && totalImpact > 0 && (
+            <span className="text-emerald-400 font-semibold flex items-center gap-1">
+              <DollarSign className="w-3 h-3" />{totalImpact.toLocaleString()} est. impact
+            </span>
+          )}
+          <span className="text-amber-300 font-semibold">{pendingCount} pending</span>
+          <span className="text-muted-foreground">{domainFiltered.length} total</span>
+        </div>
       </div>
 
       <div className="flex gap-3">
@@ -117,20 +148,18 @@ export default function Recommendations() {
                         </Badge>
                         {rec.confidence_score && (
                           <Badge variant="outline" className="text-[10px] gap-1">
-                            <Sparkles className="w-2.5 h-2.5" />
-                            {rec.confidence_score}%
+                            <Sparkles className="w-2.5 h-2.5" />{rec.confidence_score}%
                           </Badge>
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground line-clamp-2">{rec.description}</p>
                       <div className="flex items-center gap-3 mt-2">
-                        {rec.financial_impact > 0 && (
+                        {config.showFinancialImpact && rec.financial_impact > 0 && (
                           <span className="text-xs text-emerald-400 flex items-center gap-1 font-medium">
-                            <DollarSign className="w-3 h-3" />
-                            {rec.financial_impact.toLocaleString()} est. impact
+                            <DollarSign className="w-3 h-3" />{rec.financial_impact.toLocaleString()} est. impact
                           </span>
                         )}
-                        {rec.domain && <Badge variant="outline" className="text-[10px]">{rec.domain}</Badge>}
+                        {rec.domain && <Badge variant="outline" className="text-[10px] capitalize">{rec.domain}</Badge>}
                       </div>
                     </div>
                     {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
@@ -153,7 +182,7 @@ export default function Recommendations() {
                           </div>
                         )}
 
-                        {rec.execution_steps?.length > 0 && (
+                        {config.showExecutionSteps && rec.execution_steps?.length > 0 && (
                           <div>
                             <p className="text-xs font-medium text-muted-foreground mb-2">Execution Steps</p>
                             <ol className="space-y-2">
@@ -169,7 +198,7 @@ export default function Recommendations() {
                           </div>
                         )}
 
-                        {rec.risk_flags?.length > 0 && (
+                        {config.showRiskFlags && rec.risk_flags?.length > 0 && (
                           <div className="p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
                             <p className="text-xs font-medium text-red-400 mb-1 flex items-center gap-1">
                               <AlertTriangle className="w-3 h-3" /> Risk Flags
@@ -182,7 +211,7 @@ export default function Recommendations() {
                           </div>
                         )}
 
-                        {rec.alternatives?.length > 0 && (
+                        {config.showAlternatives && rec.alternatives?.length > 0 && (
                           <div>
                             <p className="text-xs font-medium text-muted-foreground mb-2">Alternatives</p>
                             <div className="space-y-2">
@@ -250,7 +279,7 @@ export default function Recommendations() {
         {filtered.length === 0 && (
           <div className="text-center py-16 text-muted-foreground">
             <Lightbulb className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">No recommendations yet. Run AI Analysis from the Intelligence Feed.</p>
+            <p className="text-sm">No recommendations for your domain yet. Run AI Analysis from the Intelligence Feed.</p>
           </div>
         )}
       </div>

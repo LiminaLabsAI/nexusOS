@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useOutletContext } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,22 +9,26 @@ import { AlertTriangle, AlertCircle, Info, CheckCircle, Eye, Search as SearchIco
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
+import { getPersonaConfig, filterByPersona } from '@/lib/personaConfig';
 
 const severityConfig = {
   critical: { icon: AlertTriangle, color: 'text-red-500', bg: 'bg-red-500/10', badge: 'border-red-500/30 text-red-400' },
-  warning: { icon: AlertCircle, color: 'text-amber-400', bg: 'bg-amber-400/10', badge: 'border-amber-400/30 text-amber-300' },
-  info: { icon: Info, color: 'text-blue-400', bg: 'bg-blue-400/10', badge: 'border-blue-400/30 text-blue-300' },
+  warning:  { icon: AlertCircle,   color: 'text-amber-400', bg: 'bg-amber-400/10', badge: 'border-amber-400/30 text-amber-300' },
+  info:     { icon: Info,           color: 'text-blue-400', bg: 'bg-blue-400/10',  badge: 'border-blue-400/30 text-blue-300' },
 };
 
 const statusConfig = {
-  new: { label: 'New', color: 'bg-blue-500/20 text-blue-400' },
+  new:          { label: 'New',          color: 'bg-blue-500/20 text-blue-400' },
   acknowledged: { label: 'Acknowledged', color: 'bg-amber-400/20 text-amber-300' },
-  investigating: { label: 'Investigating', color: 'bg-purple-400/20 text-purple-300' },
-  resolved: { label: 'Resolved', color: 'bg-emerald-500/20 text-emerald-400' },
-  dismissed: { label: 'Dismissed', color: 'bg-muted text-muted-foreground' },
+  investigating:{ label: 'Investigating',color: 'bg-purple-400/20 text-purple-300' },
+  resolved:     { label: 'Resolved',     color: 'bg-emerald-500/20 text-emerald-400' },
+  dismissed:    { label: 'Dismissed',    color: 'bg-muted text-muted-foreground' },
 };
 
 export default function Alerts() {
+  const { persona } = useOutletContext() || {};
+  const config = getPersonaConfig(persona);
+
   const [severityFilter, setSeverityFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const queryClient = useQueryClient();
@@ -39,17 +44,41 @@ export default function Alerts() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alerts'] }),
   });
 
-  const filtered = alerts.filter(a => {
+  // Domain filter first, then UI filters
+  const domainFiltered = filterByPersona(alerts, persona);
+
+  const filtered = domainFiltered.filter(a => {
     if (severityFilter !== 'all' && a.severity !== severityFilter) return false;
     if (statusFilter !== 'all' && a.status !== statusFilter) return false;
     return true;
   });
+
+  // Stats for persona header
+  const criticalCount = domainFiltered.filter(a => a.severity === 'critical').length;
+  const newCount = domainFiltered.filter(a => a.status === 'new').length;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold font-display tracking-tight">Alert Management</h1>
         <p className="text-sm text-muted-foreground mt-1">Monitor, investigate, and resolve enterprise anomalies</p>
+      </div>
+
+      {/* Persona summary bar */}
+      <div className={cn("px-4 py-3 rounded-lg bg-gradient-to-r border border-border/30 flex items-center gap-6", config.bannerColor)}>
+        <div className="text-xs">
+          <span className="font-medium text-foreground">{config.label} view</span>
+          {config.domains.length > 0 && (
+            <span className="text-muted-foreground ml-2">
+              — {config.domains.map(d => <Badge key={d} variant="outline" className="text-[10px] mr-1 capitalize">{d}</Badge>)}
+            </span>
+          )}
+        </div>
+        <div className="flex gap-4 ml-auto text-xs">
+          <span className="text-red-400 font-semibold">{criticalCount} critical</span>
+          <span className="text-blue-400 font-semibold">{newCount} new</span>
+          <span className="text-muted-foreground">{domainFiltered.length} total</span>
+        </div>
       </div>
 
       {/* Filters */}
@@ -60,9 +89,9 @@ export default function Alerts() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Severity</SelectItem>
-            <SelectItem value="critical">Critical</SelectItem>
-            <SelectItem value="warning">Warning</SelectItem>
-            <SelectItem value="info">Info</SelectItem>
+            {config.prioritySeverities.map(s => (
+              <SelectItem key={s} value={s} className="capitalize">{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -109,8 +138,8 @@ export default function Alerts() {
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">{alert.description}</p>
-                  
-                  {alert.root_cause && (
+
+                  {config.showRootCause && alert.root_cause && (
                     <div className="mt-3 p-3 bg-secondary/30 rounded-lg">
                       <p className="text-xs font-medium text-muted-foreground mb-1">Root Cause</p>
                       <p className="text-xs">{alert.root_cause}</p>
@@ -147,7 +176,7 @@ export default function Alerts() {
                         <CheckCircle className="w-3 h-3" /> Resolve
                       </Button>
                     )}
-                    {alert.domain && <Badge variant="outline" className="text-[10px]">{alert.domain}</Badge>}
+                    {alert.domain && <Badge variant="outline" className="text-[10px] capitalize">{alert.domain}</Badge>}
                     <span className="text-[10px] text-muted-foreground ml-auto">
                       {alert.created_date ? format(new Date(alert.created_date), 'MMM d, h:mm a') : ''}
                     </span>
