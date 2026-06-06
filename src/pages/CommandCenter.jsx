@@ -9,6 +9,9 @@ import DecisionPipeline from '@/components/dashboard/DecisionPipeline';
 import AgentActivityFeed from '@/components/dashboard/AgentActivityFeed';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { getPersonaConfig, filterByPersona } from '@/lib/personaConfig';
 
 export default function CommandCenter() {
   const { persona } = useOutletContext();
@@ -37,7 +40,14 @@ export default function CommandCenter() {
     initialData: [],
   });
 
-  const criticalAlerts = alerts.filter(a => a.severity === 'critical' && a.status === 'new');
+  const config = getPersonaConfig(persona);
+
+  // Apply domain filtering
+  const filteredKpis = filterByPersona(kpis, persona);
+  const filteredAlerts = filterByPersona(alerts, persona);
+  const filteredRecs = filterByPersona(recommendations, persona);
+
+  const criticalAlerts = filteredAlerts.filter(a => a.severity === 'critical' && a.status === 'new');
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
@@ -63,8 +73,26 @@ export default function CommandCenter() {
         )}
       </motion.div>
 
+      {/* Persona banner */}
+      {config.bannerText && (
+        <div className={cn("px-4 py-2.5 rounded-lg bg-gradient-to-r border border-border/30 flex items-center gap-3 flex-wrap text-xs text-muted-foreground", config.bannerColor)}>
+          <span className="font-medium text-foreground">{config.label} view:</span>
+          <span>{config.bannerText}</span>
+          {config.domains.length > 0 && (
+            <span className="flex gap-1">
+              {config.domains.map(d => (
+                <Badge key={d} variant="outline" className="text-[10px] capitalize">{d}</Badge>
+              ))}
+            </span>
+          )}
+          <span className="ml-auto text-muted-foreground">
+            {filteredKpis.length} KPIs · {filteredAlerts.length} alerts · {filteredRecs.length} recommendations
+          </span>
+        </div>
+      )}
+
       {/* Decision Pipeline */}
-      <DecisionPipeline alerts={alerts} recommendations={recommendations} />
+      <DecisionPipeline alerts={filteredAlerts} recommendations={filteredRecs} />
 
       {/* KPI Grid */}
       {kpisLoading ? (
@@ -75,12 +103,12 @@ export default function CommandCenter() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {kpis.map((kpi, i) => (
+          {filteredKpis.map((kpi, i) => (
             <KPICard key={kpi.id} kpi={kpi} index={i} />
           ))}
-          {kpis.length === 0 && (
+          {filteredKpis.length === 0 && (
             <div className="col-span-full text-center py-16 text-muted-foreground">
-              <p className="text-sm">No KPIs configured yet. Connect data sources to begin monitoring.</p>
+              <p className="text-sm">No KPIs configured for your domain. Connect data sources to begin monitoring.</p>
             </div>
           )}
         </div>
@@ -89,10 +117,10 @@ export default function CommandCenter() {
       {/* Bottom Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
-          <DomainHealth kpis={kpis} />
+          <DomainHealth kpis={filteredKpis} />
         </div>
         <div className="lg:col-span-1">
-          <AlertFeed alerts={alerts} />
+          <AlertFeed alerts={filteredAlerts} />
         </div>
         <div className="lg:col-span-1">
           <AgentActivityFeed logs={agentLogs} />
