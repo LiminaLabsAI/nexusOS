@@ -21,6 +21,7 @@ export const ROLE_ROUTES = {
   ai_engineer:   ['/agents'],
   analyst:       ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios', '/supply-chain'],
   operator:      ['/', '/alerts', '/recommendations', '/data-sources'],
+  operations:    ['/', '/alerts', '/recommendations', '/data-sources'],
   viewer:        ['/', '/intelligence'],
   user:          ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios', '/supply-chain'],
 };
