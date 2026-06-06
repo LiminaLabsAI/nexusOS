@@ -20,7 +20,7 @@ export const ROLE_ROUTES = {
   data_engineer: ['/data-sources'],
   ai_engineer:   ['/agents'],
   analyst:       ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios', '/supply-chain'],
-  operator:      ['/', '/alerts', '/recommendations', '/data-sources', '/supply-chain'],
+  operator:      ['/', '/alerts', '/recommendations', '/data-sources'],
   viewer:        ['/', '/intelligence'],
   user:          ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios', '/supply-chain'],
 };
