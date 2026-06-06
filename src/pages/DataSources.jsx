@@ -14,7 +14,7 @@ import {
   Database, Plus, Wifi, WifiOff, RefreshCw, Loader2, Trash2,
   Server, Cloud, Cpu, FileSpreadsheet, Globe, Warehouse,
   CheckSquare, CheckCheck, X, Link2, Link2Off, ShieldCheck,
-  Clock, AlertTriangle, Activity, ArrowUpRight, Download, Code2
+  Clock, AlertTriangle, Activity, ArrowUpRight, Download, Code2, Layers
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -165,11 +165,8 @@ export default function DataSources() {
           <p className="text-sm text-muted-foreground mt-1">Link external systems and monitor their real-time sync status</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => downloadCSV(sources)}>
-            <Download className="w-4 h-4" /> Export CSV
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => setShowApi(true)}>
-            <Code2 className="w-4 h-4" /> API Access
+          <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => toast.info('Semantic layer builder coming soon')}>
+            <Layers className="w-4 h-4" /> + Create Semantic Layer
           </Button>
           <Button className="gap-2" onClick={() => setShowIoT(true)}>
             <Cpu className="w-4 h-4" /> Link IoT
@@ -354,6 +351,16 @@ export default function DataSources() {
             <p className="text-sm">No systems linked. Click "Link System" to connect your first data source.</p>
           </div>
         )}
+      </div>
+
+      {/* Bottom toolbar */}
+      <div className="flex items-center gap-2 pt-2 border-t border-border/40">
+        <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => downloadCSV(sources)}>
+          <Download className="w-4 h-4" /> Export CSV
+        </Button>
+        <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => setShowApi(true)}>
+          <Code2 className="w-4 h-4" /> API Access
+        </Button>
       </div>
     </div>
   );
