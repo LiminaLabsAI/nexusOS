@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 import IoTLinkDialog from '@/components/datasources/IoTLinkDialog';
 import SemanticLayerWizard from '@/components/datasources/SemanticLayerWizard';
+import SemanticLayerDashboard from '@/components/datasources/SemanticLayerDashboard';
 import {
   Database, Plus, Wifi, WifiOff, RefreshCw, Loader2, Trash2,
   Server, Cloud, Cpu, FileSpreadsheet, Globe, Warehouse,
@@ -302,6 +303,9 @@ export default function DataSources() {
           );
         })}
       </div>
+
+      {/* Semantic Layer Health Dashboard */}
+      <SemanticLayerDashboard sources={sources} />
 
       {/* Bulk Action Bar */}
       {sources.length > 0 && (
