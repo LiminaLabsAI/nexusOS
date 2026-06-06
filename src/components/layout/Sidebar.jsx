@@ -59,7 +59,13 @@ export default function Sidebar({ collapsed, onToggle, persona }) {
 
       {/* Navigation */}
       <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
-        {navItems.filter(item => canAccess(role, item.path)).map((item) => {
+        {navItems.filter(item => {
+          if (item.path === '/admin') {
+            // Admin Portal only visible when administrator persona is active AND user is admin role
+            return persona === 'administrator' && user?.role === 'admin';
+          }
+          return canAccess(role, item.path);
+        }).map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <Link
