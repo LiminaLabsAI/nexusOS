@@ -14,16 +14,26 @@ export const ROLES = {
   user:          { label: 'User',            color: 'bg-emerald-400/20 text-emerald-300 border-emerald-400/30', description: 'Standard access: Command Center, Intelligence, Alerts, Recommendations, and Simulation Lab.' },
 };
 
-// Maps each role to the route paths it is allowed to visit
+// Maps each role/persona to the route paths it is allowed to visit
+const ALL = ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios', '/agents', '/data-sources', '/settings', '/admin'];
+const EXEC = ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios'];
+
 export const ROLE_ROUTES = {
-  admin:         ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios', '/agents', '/data-sources', '/settings', '/admin', '/supply-chain'],
+  // Auth roles
+  admin:         ALL,
   data_engineer: ['/data-sources'],
   ai_engineer:   ['/agents'],
-  analyst:       ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios', '/supply-chain'],
+  analyst:       ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios'],
   operator:      ['/', '/alerts', '/recommendations', '/data-sources'],
-  operations:    ['/', '/alerts', '/recommendations', '/data-sources'],
   viewer:        ['/', '/intelligence'],
-  user:          ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios', '/supply-chain'],
+  user:          EXEC,
+  // Personas (TopBar)
+  ceo:           EXEC,
+  coo:           EXEC,
+  cfo:           ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios'],
+  plant_manager: ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios'],
+  supply_chain:  ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios'],
+  operations:    ['/', '/alerts', '/recommendations', '/data-sources'],
 };
 
 // Human-readable module labels that match routes
