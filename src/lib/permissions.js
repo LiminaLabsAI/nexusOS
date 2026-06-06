@@ -33,7 +33,7 @@ export const ROLE_ROUTES = {
   cfo:           ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios'],
   plant_manager: ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios'],
   supply_chain:  ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios'],
-  operations:    ['/', '/alerts', '/recommendations', '/data-sources'],
+  operations:    ['/', '/alerts', '/recommendations'],
 };
 
 // Human-readable module labels that match routes
