@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import {
   Layers, Database, CheckCircle2, AlertCircle, Clock,
   Activity, Server, Globe, Cpu, FileSpreadsheet, Cloud, Warehouse,
-  Zap, HardDrive
+  Zap, HardDrive, Search, X
 } from 'lucide-react';
 
 const typeIcons = {
@@ -202,7 +203,13 @@ function LayerCard({ layer, allSources, index }) {
   );
 }
 
+const STATUS_OPTIONS = ['all', 'active', 'building', 'error'];
+
 export default function SemanticLayerDashboard({ sources }) {
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [providerFilter, setProviderFilter] = useState('all');
+
   const { data: layers = [] } = useQuery({
     queryKey: ['semantic-layers'],
     queryFn: () => base44.entities.SemanticLayer.list('-created_date'),
@@ -211,16 +218,34 @@ export default function SemanticLayerDashboard({ sources }) {
 
   if (layers.length === 0) return null;
 
+  // Derive unique providers from linked sources
+  const allProviders = [...new Set(
+    layers.flatMap(l =>
+      (l.source_ids || []).map(id => sources.find(s => s.id === id)?.provider).filter(Boolean)
+    )
+  )];
+
+  const filtered = layers.filter(l => {
+    const matchName = !search || l.name.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === 'all' || l.status === statusFilter;
+    const matchProvider = providerFilter === 'all' || (l.source_ids || []).some(id => {
+      const src = sources.find(s => s.id === id);
+      return src?.provider === providerFilter;
+    });
+    return matchName && matchStatus && matchProvider;
+  });
+
   const avgHealth = Math.round(
     layers.reduce((sum, l) => sum + computeHealthScore(l, sources), 0) / layers.length
   );
   const activeCount = layers.filter(l => l.status === 'active').length;
   const h = healthLabel(avgHealth);
+  const hasActiveFilters = search || statusFilter !== 'all' || providerFilter !== 'all';
 
   return (
     <div className="space-y-3">
       {/* Section header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-primary" />
           <h2 className="text-sm font-semibold">Semantic Layers</h2>
@@ -234,12 +259,78 @@ export default function SemanticLayerDashboard({ sources }) {
         </div>
       </div>
 
-      {/* Cards grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {layers.map((layer, i) => (
-          <LayerCard key={layer.id} layer={layer} allSources={sources} index={i} />
-        ))}
+      {/* Search & filter bar */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[160px]">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+          <Input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search layers…"
+            className="pl-8 h-8 text-xs"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+
+        {/* Status filter pills */}
+        <div className="flex items-center gap-1">
+          {STATUS_OPTIONS.map(s => (
+            <button key={s} onClick={() => setStatusFilter(s)}
+              className={cn(
+                "px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors border",
+                statusFilter === s
+                  ? "bg-primary/15 text-primary border-primary/30"
+                  : "text-muted-foreground border-border hover:border-border/80 hover:text-foreground"
+              )}>
+              {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {/* Provider filter */}
+        {allProviders.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap">
+            {['all', ...allProviders].map(p => (
+              <button key={p} onClick={() => setProviderFilter(p)}
+                className={cn(
+                  "px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors border",
+                  providerFilter === p
+                    ? "bg-accent/15 text-accent border-accent/30"
+                    : "text-muted-foreground border-border hover:border-border/80 hover:text-foreground"
+                )}>
+                {p === 'all' ? 'Any Provider' : p}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Clear all */}
+        {hasActiveFilters && (
+          <button onClick={() => { setSearch(''); setStatusFilter('all'); setProviderFilter('all'); }}
+            className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors ml-1">
+            <X className="w-3 h-3" /> Clear
+          </button>
+        )}
       </div>
+
+      {/* Cards grid */}
+      {filtered.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-xl">
+          <Search className="w-6 h-6 mx-auto mb-2 opacity-30" />
+          <p className="text-xs">No layers match your filters.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filtered.map((layer, i) => (
+            <LayerCard key={layer.id} layer={layer} allSources={sources} index={i} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

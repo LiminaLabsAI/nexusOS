@@ -16,7 +16,7 @@ import {
   Database, Plus, Wifi, WifiOff, RefreshCw, Loader2, Trash2,
   Server, Cloud, Cpu, FileSpreadsheet, Globe, Warehouse,
   CheckSquare, CheckCheck, X, Link2, Link2Off, ShieldCheck,
-  Clock, AlertTriangle, Activity, ArrowUpRight, Download, Code2, Layers
+  Clock, AlertTriangle, Activity, ArrowUpRight, Download, Code2, Layers, Search
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -93,6 +93,9 @@ export default function DataSources() {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkRunning, setBulkRunning] = useState(false);
   const [syncingIds, setSyncingIds] = useState(new Set());
+  const [sourceSearch, setSourceSearch] = useState('');
+  const [sourceStatusFilter, setSourceStatusFilter] = useState('all');
+  const [sourceTypeFilter, setSourceTypeFilter] = useState('all');
   const queryClient = useQueryClient();
 
   const { data: sources = [] } = useQuery({
@@ -158,6 +161,15 @@ export default function DataSources() {
   const connectedCount = sources.filter(s => s.status === 'connected' || s.status === 'syncing').length;
   const totalRecords = sources.reduce((sum, s) => sum + (s.records_synced || 0), 0);
   const errorCount = sources.filter(s => s.status === 'error').length;
+
+  const filteredSources = sources.filter(s => {
+    const matchSearch = !sourceSearch ||
+      s.name.toLowerCase().includes(sourceSearch.toLowerCase()) ||
+      (s.provider || '').toLowerCase().includes(sourceSearch.toLowerCase());
+    const matchStatus = sourceStatusFilter === 'all' || s.status === sourceStatusFilter;
+    const matchType = sourceTypeFilter === 'all' || s.type === sourceTypeFilter;
+    return matchSearch && matchStatus && matchType;
+  });
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -307,6 +319,50 @@ export default function DataSources() {
       {/* Semantic Layer Health Dashboard */}
       <SemanticLayerDashboard sources={sources} />
 
+      {/* Search & Filter Bar for Sources */}
+      {sources.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative flex-1 min-w-[160px]">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            <Input value={sourceSearch} onChange={e => setSourceSearch(e.target.value)}
+              placeholder="Search sources…" className="pl-8 h-8 text-xs" />
+            {sourceSearch && (
+              <button onClick={() => setSourceSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            {['all', 'connected', 'syncing', 'disconnected', 'error'].map(s => (
+              <button key={s} onClick={() => setSourceStatusFilter(s)}
+                className={cn("px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors border",
+                  sourceStatusFilter === s
+                    ? "bg-primary/15 text-primary border-primary/30"
+                    : "text-muted-foreground border-border hover:text-foreground")}>
+                {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1">
+            {['all', ...Object.keys(typeConfig)].map(t => (
+              <button key={t} onClick={() => setSourceTypeFilter(t)}
+                className={cn("px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors border",
+                  sourceTypeFilter === t
+                    ? "bg-accent/15 text-accent border-accent/30"
+                    : "text-muted-foreground border-border hover:text-foreground")}>
+                {t === 'all' ? 'Any Type' : typeConfig[t]?.label || t}
+              </button>
+            ))}
+          </div>
+          {(sourceSearch || sourceStatusFilter !== 'all' || sourceTypeFilter !== 'all') && (
+            <button onClick={() => { setSourceSearch(''); setSourceStatusFilter('all'); setSourceTypeFilter('all'); }}
+              className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
+              <X className="w-3 h-3" /> Clear
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Bulk Action Bar */}
       {sources.length > 0 && (
         <div className="flex items-center gap-3 flex-wrap">
@@ -335,7 +391,7 @@ export default function DataSources() {
 
       {/* Sources Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {sources.map((source, i) => (
+        {filteredSources.map((source, i) => (
           <SourceCard
             key={source.id}
             source={source}
@@ -359,6 +415,12 @@ export default function DataSources() {
           <div className="col-span-full text-center py-16 text-muted-foreground">
             <Database className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p className="text-sm">No systems linked. Click "Link System" to connect your first data source.</p>
+          </div>
+        )}
+        {sources.length > 0 && filteredSources.length === 0 && (
+          <div className="col-span-full text-center py-10 text-muted-foreground border border-dashed border-border rounded-xl">
+            <Search className="w-7 h-7 mx-auto mb-2 opacity-30" />
+            <p className="text-sm">No sources match your filters.</p>
           </div>
         )}
       </div>
