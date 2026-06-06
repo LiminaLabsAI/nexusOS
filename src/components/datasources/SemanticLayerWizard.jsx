@@ -9,13 +9,14 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Layers, CheckCircle2, ChevronRight, ChevronLeft, Database,
-  Server, Globe, Cpu, FileSpreadsheet, Cloud, Warehouse, Loader2, Sparkles
+  Server, Globe, Cpu, FileSpreadsheet, Cloud, Warehouse, Loader2, Sparkles, Upload
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import PersistenceLayerStep from './PersistenceLayerStep';
 import CubeFabricModal from './CubeFabricModal';
 import SemanticLayerSummary from './SemanticLayerSummary';
+import CSVUploadMapper from './CSVUploadMapper';
 
 const typeIcons = {
   erp: Server, crm: Globe, iot: Cpu,
@@ -47,6 +48,7 @@ export default function SemanticLayerWizard({ open, onOpenChange, sources }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState(null);
+  const [mapTab, setMapTab] = useState('ai'); // 'ai' | 'csv'
   const [persistence, setPersistence] = useState(DEFAULT_PERSISTENCE);
   const [showFabric, setShowFabric] = useState(false);
 
@@ -116,6 +118,7 @@ Keep entity names as business concepts (e.g. "Customer", "Order", "Product", "As
     setFieldMappings({});
     setAiSuggestions(null);
     setPersistence(DEFAULT_PERSISTENCE);
+    setMapTab('ai');
   };
 
   const handleClose = () => { resetState(); onOpenChange(false); };
@@ -243,38 +246,79 @@ Keep entity names as business concepts (e.g. "Customer", "Order", "Product", "As
               {/* Step 2: Map Fields */}
               {step === 2 && (
                 <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-                  <div>
-                    <p className="text-sm font-medium">Field Mappings</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Review how fields map from your sources to semantic entities</p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">Field Mappings</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Review AI suggestions or upload CSVs to map fields manually</p>
+                    </div>
+                    {/* Tab toggle */}
+                    <div className="flex items-center bg-secondary rounded-lg p-0.5 gap-0.5">
+                      <button onClick={() => setMapTab('ai')}
+                        className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                          mapTab === 'ai' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                        <Sparkles className="w-3 h-3" /> AI
+                      </button>
+                      <button onClick={() => setMapTab('csv')}
+                        className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                          mapTab === 'csv' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                        <Upload className="w-3 h-3" /> CSV Upload
+                      </button>
+                    </div>
                   </div>
-                  {namedEntities.map(entity => {
-                    const mappings = fieldMappings[entity.name] || [];
-                    return (
-                      <div key={entity.name} className="bg-card border border-border/60 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="w-6 h-6 rounded bg-primary/15 flex items-center justify-center">
-                            <Database className="w-3 h-3 text-primary" />
-                          </div>
-                          <p className="text-sm font-semibold">{entity.name}</p>
-                          {entity.description && <p className="text-xs text-muted-foreground">— {entity.description}</p>}
-                        </div>
-                        {mappings.length > 0 ? (
-                          <div className="space-y-1.5">
-                            {mappings.map((m, mi) => (
-                              <div key={mi} className="flex items-center gap-2 text-xs bg-secondary/50 rounded px-3 py-1.5">
-                                <span className="font-medium text-foreground w-24 truncate">{m.field}</span>
-                                <ChevronRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-                                <span className="text-muted-foreground truncate">{m.sourceName || 'Source'}.{m.sourceField}</span>
-                                {m.type && <Badge variant="outline" className="text-[9px] ml-auto">{m.type}</Badge>}
+
+                  {mapTab === 'ai' && (
+                    <>
+                      {namedEntities.map(entity => {
+                        const mappings = fieldMappings[entity.name] || [];
+                        return (
+                          <div key={entity.name} className="bg-card border border-border/60 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-6 h-6 rounded bg-primary/15 flex items-center justify-center">
+                                <Database className="w-3 h-3 text-primary" />
                               </div>
-                            ))}
+                              <p className="text-sm font-semibold">{entity.name}</p>
+                              {entity.description && <p className="text-xs text-muted-foreground">— {entity.description}</p>}
+                            </div>
+                            {mappings.length > 0 ? (
+                              <div className="space-y-1.5">
+                                {mappings.map((m, mi) => (
+                                  <div key={mi} className="flex items-center gap-2 text-xs bg-secondary/50 rounded px-3 py-1.5">
+                                    <span className="font-medium text-foreground w-24 truncate">{m.field}</span>
+                                    <ChevronRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                                    <span className="text-muted-foreground truncate">{m.sourceName || 'Source'}.{m.sourceField}</span>
+                                    {m.type && <Badge variant="outline" className="text-[9px] ml-auto">{m.type}</Badge>}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-muted-foreground text-center py-3">Mappings will be auto-inferred on first sync</p>
+                            )}
                           </div>
-                        ) : (
-                          <p className="text-xs text-muted-foreground text-center py-3">Mappings will be auto-inferred on first sync</p>
-                        )}
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
+                    </>
+                  )}
+
+                  {mapTab === 'csv' && (
+                    <CSVUploadMapper
+                      namedEntities={namedEntities}
+                      onMappingsApplied={(csvMappings) => {
+                        // Merge CSV mappings into existing fieldMappings
+                        setFieldMappings(prev => {
+                          const merged = { ...prev };
+                          Object.entries(csvMappings).forEach(([entity, fields]) => {
+                            const existing = merged[entity] || [];
+                            const newFields = fields.filter(f =>
+                              !existing.some(e => e.field === f.field && e.sourceField === f.sourceField)
+                            );
+                            merged[entity] = [...existing, ...newFields];
+                          });
+                          return merged;
+                        });
+                        setMapTab('ai');
+                      }}
+                    />
+                  )}
                 </motion.div>
               )}
 
