@@ -14,7 +14,7 @@ import { Link } from 'react-router-dom';
 import {
   Shield, Users, UserPlus, Mail, Crown, User,
   Loader2, CheckCircle, Activity, Lock,
-  Check, Minus, Eye
+  Check, Minus, Eye, Database
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -23,11 +23,12 @@ import { toast } from 'sonner';
 import { ROLES, ROLE_ROUTES, ROUTE_LABELS } from '@/lib/permissions';
 
 const ROLE_ICONS = {
-  admin:    Crown,
-  analyst:  Activity,
-  operator: Shield,
-  viewer:   Eye,
-  user:     User,
+  admin:         Crown,
+  data_engineer: Database,
+  analyst:       Activity,
+  operator:      Shield,
+  viewer:        Eye,
+  user:          User,
 };
 
 const ALL_ROUTES = ['/', '/intelligence', '/alerts', '/recommendations', '/scenarios', '/agents', '/data-sources', '/settings', '/admin'];

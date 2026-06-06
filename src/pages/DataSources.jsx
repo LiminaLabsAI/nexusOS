@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -84,6 +85,8 @@ function downloadCSV(sources) {
 }
 
 export default function DataSources() {
+  const { user } = useAuth();
+  const canManageMemory = user?.role === 'admin' || user?.role === 'data_engineer';
   const [showCreate, setShowCreate] = useState(false);
   const [showApi, setShowApi] = useState(false);
   const [showIoT, setShowIoT] = useState(false);
@@ -245,17 +248,21 @@ export default function DataSources() {
           <Button size="sm" variant="outline" className="gap-2 h-9" onClick={() => setShowIoT(true)}>
             <Cpu className="w-4 h-4" /> Link IoT Devices
           </Button>
-          <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => setShowSemanticLayer(true)}>
-            <Layers className="w-4 h-4" /> + Create Semantic Layer
-          </Button>
+          {canManageMemory && (
+            <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => setShowSemanticLayer(true)}>
+              <Layers className="w-4 h-4" /> + Create Semantic Layer
+            </Button>
+          )}
         </div>
       </div>
 
-      <SemanticLayerWizard
-        open={showSemanticLayer}
-        onOpenChange={setShowSemanticLayer}
-        sources={sources}
-      />
+      {canManageMemory && (
+        <SemanticLayerWizard
+          open={showSemanticLayer}
+          onOpenChange={setShowSemanticLayer}
+          sources={sources}
+        />
+      )}
 
       <IoTLinkDialog
         open={showIoT}
@@ -317,7 +324,7 @@ export default function DataSources() {
       </div>
 
       {/* Semantic Layer Health Dashboard */}
-      <SemanticLayerDashboard sources={sources} />
+      {canManageMemory && <SemanticLayerDashboard sources={sources} />}
 
       {/* Search & Filter Bar for Sources */}
       {sources.length > 0 && (
