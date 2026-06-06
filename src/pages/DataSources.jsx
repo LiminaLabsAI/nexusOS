@@ -162,16 +162,10 @@ export default function DataSources() {
       <div>
         <h1 className="text-2xl font-bold font-display tracking-tight">Build & Manage Enterprise Memory</h1>
         <p className="text-sm text-muted-foreground mt-1">Link external systems and monitor their real-time sync status</p>
-        <div className="flex flex-col items-start gap-2 mt-4">
-          <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => toast.info('Semantic layer builder coming soon')}>
-            <Layers className="w-4 h-4" /> + Create Semantic Layer
-          </Button>
-          <Button size="sm" className="gap-2 h-9" onClick={() => setShowIoT(true)}>
-            <Cpu className="w-4 h-4" /> Link IoT
-          </Button>
+        <div className="flex items-center gap-2 mt-4 flex-wrap">
           <Dialog open={showCreate} onOpenChange={setShowCreate}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2 h-9"><Plus className="w-4 h-4" /> Link System</Button>
+              <Button size="sm" className="gap-2 h-9"><Plus className="w-4 h-4" /> Link System</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Link External System</DialogTitle></DialogHeader>
@@ -233,6 +227,12 @@ export default function DataSources() {
               </div>
             </DialogContent>
           </Dialog>
+          <Button size="sm" variant="outline" className="gap-2 h-9" onClick={() => setShowIoT(true)}>
+            <Cpu className="w-4 h-4" /> Link IoT Devices
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => toast.info('Semantic layer builder coming soon')}>
+            <Layers className="w-4 h-4" /> + Create Semantic Layer
+          </Button>
         </div>
       </div>
 
