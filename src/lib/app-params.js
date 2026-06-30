@@ -19,16 +19,16 @@ const getAppParamValue = (paramName, { defaultValue = undefined, removeFromUrl =
 			}${window.location.hash}`;
 		window.history.replaceState({}, document.title, newUrl);
 	}
-	if (searchParam) {
+	if (searchParam && searchParam !== 'null' && searchParam !== 'undefined') {
 		storage.setItem(storageKey, searchParam);
 		return searchParam;
 	}
-	if (defaultValue) {
+	if (defaultValue && defaultValue !== 'null' && defaultValue !== 'undefined') {
 		storage.setItem(storageKey, defaultValue);
 		return defaultValue;
 	}
 	const storedValue = storage.getItem(storageKey);
-	if (storedValue) {
+	if (storedValue && storedValue !== 'null' && storedValue !== 'undefined') {
 		return storedValue;
 	}
 	return null;
